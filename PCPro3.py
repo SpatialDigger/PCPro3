@@ -28,6 +28,7 @@ from tools import (
 )
 # from normals import ball_pivoting_triangulation
 
+
 # Suppress deprecation warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 

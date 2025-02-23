@@ -10,7 +10,7 @@ from dialogs_pyqt5 import (
     SampleDialog,
     # PoissonSurfaceDialog,
     ScaleFactorDialog)
-
+import scipy.spatial
 
 import open3d as o3d
 import numpy as np
@@ -20,10 +20,6 @@ from PyQt5.QtWidgets import QApplication, QDialog, QVBoxLayout, QComboBox, QPush
 
 def fill_holes(self, selected_items):
     pass
-
-
-
-import scipy.spatial
 
 
 def fill_holes_delaunay3d(self, selected_items):
