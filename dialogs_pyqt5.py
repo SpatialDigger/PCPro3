@@ -6,7 +6,6 @@ from PyQt5.QtWidgets import (
     QTextEdit, QSlider, QApplication, QFormLayout, QFileDialog
 )
 
-
 class ImportPointCloudDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -579,3 +578,104 @@ class ScaleFactorDialog(QDialog):
 
     def get_scale_factor(self):
         return self.scale_slider.value() / 100.0
+
+# class NormalsDialog(QDialog):
+#     def __init__(self, parent=None):
+#         super().__init__(parent)
+#         self.setWindowTitle("Normals Parameters")
+#
+#         layout = QVBoxLayout()
+#
+#         self.eps_label = QLabel("Epsilon (eps):")
+#         self.eps_input = QDoubleSpinBox()
+#         self.eps_input.setRange(0.01, 10.0)
+#         self.eps_input.setValue(0.02)
+#         layout.addWidget(self.eps_label)
+#         layout.addWidget(self.eps_input)
+#
+#         self.min_points_label = QLabel("Minimum Points:")
+#         self.min_points_input = QSpinBox()
+#         self.min_points_input.setRange(1, 100)
+#         self.min_points_input.setValue(5)
+#         layout.addWidget(self.min_points_label)
+#         layout.addWidget(self.min_points_input)
+#
+#         self.buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+#         self.buttons.accepted.connect(self.accept)
+#         self.buttons.rejected.connect(self.reject)
+#         layout.addWidget(self.buttons)
+#
+#         self.setLayout(layout)
+#
+#     def get_eps(self):
+#         return self.eps_input.value()
+#
+#     def get_min_points(self):
+#         return self.min_points_input.value()
+
+
+
+
+
+class NormalEstimationDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.setWindowTitle("Normal Estimation Settings")
+        self.setModal(True)
+
+        layout = QVBoxLayout()
+
+        # Method selection
+        self.method_label = QLabel("Method:")
+        self.method_combo = QComboBox()
+        self.method_combo.addItems(["knn", "alpha_shape"])
+        self.method_combo.currentTextChanged.connect(self.toggle_fields)
+
+        # k-NN neighbors selection
+        self.k_label = QLabel("k (Nearest Neighbors):")
+        self.k_spinbox = QSpinBox()
+        self.k_spinbox.setRange(1, 100)
+        self.k_spinbox.setValue(6)
+
+        # Alpha value selection
+        self.alpha_label = QLabel("Alpha (Triangulation Parameter):")
+        self.alpha_spinbox = QDoubleSpinBox()
+        self.alpha_spinbox.setRange(0.001, 1.0)
+        self.alpha_spinbox.setSingleStep(0.01)
+        self.alpha_spinbox.setValue(0.03)
+
+        # Form layout
+        form_layout = QFormLayout()
+        form_layout.addRow(self.method_label, self.method_combo)
+        form_layout.addRow(self.k_label, self.k_spinbox)
+        form_layout.addRow(self.alpha_label, self.alpha_spinbox)
+
+        layout.addLayout(form_layout)
+
+        # Buttons
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        button_box.accepted.connect(self.accept)
+        button_box.rejected.connect(self.reject)
+        layout.addWidget(button_box)
+
+        self.setLayout(layout)
+
+        # Initialize field visibility
+        self.toggle_fields(self.method_combo.currentText())
+
+    def toggle_fields(self, method):
+        """Show/hide fields based on selected method."""
+        is_knn = method == "knn"
+        self.k_label.setVisible(is_knn)
+        self.k_spinbox.setVisible(is_knn)
+        self.alpha_label.setVisible(not is_knn)
+        self.alpha_spinbox.setVisible(not is_knn)
+
+    def get_parameters(self):
+        """Returns selected parameters."""
+        return {
+            "method": self.method_combo.currentText(),
+            "k": self.k_spinbox.value(),
+            "alpha": self.alpha_spinbox.value()
+        }

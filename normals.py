@@ -1,56 +1,120 @@
 import open3d as o3d
+import numpy as np
+
+def compute_normals(self, selected_items, method="knn", k=6, alpha=0.03):
+    """Computes normals for selected point clouds using k-NN or Alpha Shape triangulation."""
+
+    # Separate selected point clouds along with their parents
+    selected_point_clouds = []
+    parent_child_mapping = {}  # Maps point clouds to their respective parents
+
+    for item in selected_items:
+        parent_name = item.parent().text(0) if item.parent() else None
+        child_name = item.text(0)
+        key = (parent_name, child_name)
+
+        if key in self.o3d_viewer.items:
+            o3d_item = self.o3d_viewer.items[key]
+            if isinstance(o3d_item, o3d.geometry.PointCloud):
+                selected_point_clouds.append(o3d_item)
+                parent_child_mapping[o3d_item] = parent_name
+
+    if not selected_point_clouds:
+        self.add_log_message("No valid point clouds selected.")
+        return
+
+    # Process each selected point cloud
+    processed_clouds = []
+    for pcd in selected_point_clouds:
+        if method == "knn":
+            pcd.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamKNN(knn=k))
+            pcd.orient_normals_consistent_tangent_plane(k)
+            self.add_log_message(f"Computed normals for '{parent_child_mapping[pcd]}' using k-NN.")
+            processed_clouds.append(pcd)
+
+        elif method == "alpha_shape":
+            mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(pcd, alpha)
+            mesh.compute_vertex_normals()
+            self.add_log_message(f"Computed normals for '{parent_child_mapping[pcd]}' using Alpha Shape.")
+            processed_clouds.append(mesh)
+
+        else:
+            self.add_log_message("Invalid method. Use 'knn' or 'alpha_shape'.")
+            return
+
+    # Add the processed point clouds/meshes back to their respective parents
+    base_child_name = "computed_normals"
+
+    def generate_unique_name(base_name, existing_children):
+        counter = 1
+        unique_name = base_name
+        while unique_name in existing_children:
+            unique_name = f"{base_name}_{counter}"
+            counter += 1
+        return unique_name
+
+    for processed_pc, original_pc in zip(processed_clouds, selected_point_clouds):
+        parent_name = parent_child_mapping.get(original_pc, "Processed Point Clouds")
+        existing_children = self.data.get(parent_name, {}).keys()
+
+        child_name = generate_unique_name(base_child_name, existing_children)
+
+        # Add the new point cloud/mesh to the tree and data
+        self.add_child_to_tree_and_data(parent_name, child_name, processed_pc)
+
+        self.add_log_message(f"Added computed normals '{child_name}' under '{parent_name}'.")
 
 
-def compute_normals_cloudcompare_style(pcd, method="knn", k=6, alpha=0.03):
-    """
-    Compute normals in a way similar to CloudCompare using triangulation-based local surface modeling.
+def invert_normals(self, selected_items):
+    """Inverts the normals of selected point clouds."""
 
-    Parameters:
-    - pcd (o3d.geometry.PointCloud): The input point cloud.
-    - method (str): "knn" for k-NN based normal estimation (default),
-                    "alpha_shape" for triangulation-based normals.
-    - k (int): Number of nearest neighbors to use for k-NN normal estimation.
-    - alpha (float): Alpha value for the alpha shape triangulation (if method="alpha_shape").
+    # Separate selected point clouds along with their parents
+    selected_point_clouds = []
+    parent_child_mapping = {}
 
-    Returns:
-    - pcd or mesh: Point cloud with computed normals (if method="knn"),
-                   or a mesh with computed vertex normals (if method="alpha_shape").
-    """
+    for item in selected_items:
+        parent_name = item.parent().text(0) if item.parent() else None
+        child_name = item.text(0)
+        key = (parent_name, child_name)
 
-    if method == "knn":
-        # Estimate normals using k-NN (default k=6 like CloudCompare)
-        pcd.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamKNN(knn=k))
+        if key in self.o3d_viewer.items:
+            o3d_item = self.o3d_viewer.items[key]
+            if isinstance(o3d_item, o3d.geometry.PointCloud):
+                if o3d_item.has_normals():
+                    selected_point_clouds.append(o3d_item)
+                    parent_child_mapping[o3d_item] = parent_name
+                else:
+                    self.add_log_message(f"Point cloud '{child_name}' has no normals to invert.")
 
-        # Orient normals consistently
-        pcd.orient_normals_consistent_tangent_plane(k)
+    if not selected_point_clouds:
+        self.add_log_message("No valid point clouds with normals selected.")
+        return
 
-        return pcd
+    # Invert normals for each selected point cloud
+    inverted_clouds = []
+    for pcd in selected_point_clouds:
+        pcd.normals = o3d.utility.Vector3dVector(-np.asarray(pcd.normals))
+        self.add_log_message(f"Inverted normals for '{parent_child_mapping[pcd]}'.")
+        inverted_clouds.append(pcd)
 
-    elif method == "alpha_shape":
-        # Generate a triangulated mesh using Alpha Shape
-        mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(pcd, alpha)
+    # Add the inverted point clouds back to their respective parents
+    base_child_name = "inverted_normals"
 
-        # Compute normals on the mesh vertices
-        mesh.compute_vertex_normals()
+    def generate_unique_name(base_name, existing_children):
+        counter = 1
+        unique_name = base_name
+        while unique_name in existing_children:
+            unique_name = f"{base_name}_{counter}"
+            counter += 1
+        return unique_name
 
-        return mesh
+    for inverted_pc, original_pc in zip(inverted_clouds, selected_point_clouds):
+        parent_name = parent_child_mapping.get(original_pc, "Processed Point Clouds")
+        existing_children = self.data.get(parent_name, {}).keys()
 
-    else:
-        raise ValueError("Invalid method. Use 'knn' or 'alpha_shape'.")
+        child_name = generate_unique_name(base_child_name, existing_children)
 
+        # Add the new point cloud to the tree and data
+        self.add_child_to_tree_and_data(parent_name, child_name, inverted_pc)
 
-# Example usage
-if __name__ == "__main__":
-    pcd = o3d.io.read_point_cloud("your_point_cloud.ply")
-
-    # Compute normals using k-NN (CloudCompare default)
-    pcd_with_normals = compute_normals_cloudcompare_style(pcd, method="knn", k=6)
-
-    # Visualize point cloud with normals
-    o3d.visualization.draw_geometries([pcd_with_normals], point_show_normal=True)
-
-    # Alternatively, compute normals using triangulation (alpha shape)
-    mesh_with_normals = compute_normals_cloudcompare_style(pcd, method="alpha_shape", alpha=0.03)
-
-    # Visualize triangulated mesh
-    o3d.visualization.draw_geometries([mesh_with_normals])
+        self.add_log_message(f"Added inverted normals '{child_name}' under '{parent_name}'.")

@@ -27,6 +27,8 @@ from tools import (
     substitute_points
 )
 # from normals import ball_pivoting_triangulation
+from normals import(
+    compute_normals, invert_normals)
 
 # Suppress deprecation warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -796,15 +798,15 @@ class MainWindow(QMainWindow):
         normals_menu = edit_menu.addMenu("Normals")
 
         calculate_normals_action = QAction("Calculate Normals", self)
-        calculate_normals_action.setToolTip("Filter points based on a hull footprint")
-        calculate_normals_action.setEnabled(False)
-        # calculate_normals_action.triggered.connect(lambda: calculate_normals(self, self.selected_items()))
+        calculate_normals_action.setToolTip("Calculate Normals")
+        calculate_normals_action.setEnabled(True)
+        calculate_normals_action.triggered.connect(lambda: compute_normals(self, self.selected_items()))
         normals_menu.addAction(calculate_normals_action)
 
         invert_normals_action = QAction("Invert Normals", self)
         invert_normals_action.setToolTip("Filter points based on a hull footprint")
-        invert_normals_action.setEnabled(False)
-        # invert_normals_action.triggered.connect(lambda: invert_normals(self, self.selected_items()))
+        invert_normals_action.setEnabled(True)
+        invert_normals_action.triggered.connect(lambda: invert_normals(self, self.selected_items()))
         normals_menu.addAction(invert_normals_action)
 
         merge_action = QAction("Merge", self)
@@ -959,7 +961,7 @@ class MainWindow(QMainWindow):
 
         poisson_surface_reconstruction_action = QAction("Poisson Surface Reconstruction", self)
         poisson_surface_reconstruction_action.setToolTip("Compute the 3D convex hull of the pointcloud")
-        poisson_surface_reconstruction_action.setEnabled(False)
+        poisson_surface_reconstruction_action.setEnabled(True)
         poisson_surface_reconstruction_action.triggered.connect(lambda: poisson_surface_reconstruction(self, self.selected_items()))
         analysis_menu.addAction(poisson_surface_reconstruction_action)
 
