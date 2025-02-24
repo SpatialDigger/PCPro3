@@ -1,8 +1,25 @@
 import open3d as o3d
 import numpy as np
 
-def compute_normals(self, selected_items, method="knn", k=6, alpha=0.03):
+from PyQt5.QtWidgets import (
+    QDialog
+)
+
+from dialogs_pyqt5 import (NormalEstimationDialog)
+
+def compute_normals(self, selected_items):
     """Computes normals for selected point clouds using k-NN or Alpha Shape triangulation."""
+
+    # Open the Normal Estimation Dialog
+    dialog = NormalEstimationDialog(self)
+    if dialog.exec() == QDialog.DialogCode.Accepted:
+        params = dialog.get_parameters()
+        method = params["method"]
+        k = params["k"]
+        alpha = params["alpha"]
+    else:
+        self.add_log_message("Normal estimation was canceled.")
+        return
 
     # Separate selected point clouds along with their parents
     selected_point_clouds = []
@@ -63,6 +80,7 @@ def compute_normals(self, selected_items, method="knn", k=6, alpha=0.03):
         self.add_child_to_tree_and_data(parent_name, child_name, processed_pc)
 
         self.add_log_message(f"Added computed normals '{child_name}' under '{parent_name}'.")
+
 
 
 def invert_normals(self, selected_items):
