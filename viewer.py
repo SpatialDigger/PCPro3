@@ -15,83 +15,6 @@ class Open3DViewer:
 
         self.render_option = self.vis.get_render_option()
 
-
-        # Add RGB XYZ axis during initialization
-        # axis = self.create_axis(length=1.0)  # Adjust axis length if needed
-        # self.add_item(axis, parent_name="Viewer", child_name="XYZ_Axis")
-
-
-    # def create_axis(self, length=1.0):
-    #     """
-    #     Create an RGB-colored XYZ axis visualization in Open3D.
-    #     Args:
-    #         length (float): Length of the axes.
-    #     Returns:
-    #         o3d.geometry.LineSet: Axis representation as a LineSet.
-    #     """
-    #     # Points for the origin and the tips of the axes
-    #     points = [
-    #         [0, 0, 0],  # Origin
-    #         [length, 0, 0],  # X-axis tip
-    #         [0, length, 0],  # Y-axis tip
-    #         [0, 0, length],  # Z-axis tip
-    #     ]
-    #
-    #     # Lines connecting the origin to the tips of the axes
-    #     lines = [
-    #         [0, 1],  # X-axis
-    #         [0, 2],  # Y-axis
-    #         [0, 3],  # Z-axis
-    #     ]
-    #
-    #     # RGB colors for the axes
-    #     colors = [
-    #         [1, 0, 0],  # Red for X-axis
-    #         [0, 1, 0],  # Green for Y-axis
-    #         [0, 0, 1],  # Blue for Z-axis
-    #     ]
-    #
-    #     # Create the LineSet object
-    #     axis = o3d.geometry.LineSet()
-    #     axis.points = o3d.utility.Vector3dVector(points)
-    #     axis.lines = o3d.utility.Vector2iVector(lines)
-    #     axis.colors = o3d.utility.Vector3dVector(colors)
-    #
-    #     return axis
-    #
-    # def initialize_axis(self):
-    #     """Add the XYZ axis to the viewer after initialization."""
-    #     print('Axis selected')
-    #     axis = Open3DViewer.create_axis(length=1.0)  # Adjust axis length if needed
-    #     self.add_item(axis, parent_name="Viewer", child_name="XYZ_Axis")
-
-
-
-    def update_point_cloud_color(self, parent_name, color_rgb):
-        if parent_name not in self.data or "Pointcloud" not in self.data[parent_name]:
-            self.logger(f"Parent {parent_name} not found or missing 'Pointcloud' key.")
-            return
-
-        point_cloud = self.data[parent_name]["Pointcloud"]
-        num_points = len(point_cloud.points)
-
-        # Ensure point cloud colors are consistent
-        if not hasattr(point_cloud, "colors") or len(point_cloud.colors) != num_points:
-            self.logger(f"Point cloud for {parent_name} missing or has invalid 'colors'. Reinitializing colors.")
-            point_cloud.colors = o3d.utility.Vector3dVector([color_rgb] * num_points)
-        else:
-            self.logger(f"Applying new color {color_rgb} to point cloud {parent_name}.")
-            point_cloud.colors = o3d.utility.Vector3dVector([color_rgb] * num_points)
-
-        # Attempt to refresh the viewer
-        try:
-            # self.update_viewer_state()
-            self.update_viewer()
-
-            self.logger(f"Successfully refreshed the viewer after color change for {parent_name}.")
-        except Exception as e:
-            self.logger(f"Error refreshing viewer: {str(e)}")
-
     def log_message(self, message):
         if self.logger:
             self.logger(message)
@@ -212,3 +135,31 @@ class Open3DViewer:
     def close(self):
         """Close the Open3D viewer window."""
         self.vis.destroy_window()
+
+
+    def update_point_cloud_color(self, parent_name, new_color_rgb):
+        """Update the color of a point cloud in the viewer."""
+        key = (parent_name, "Pointcloud")
+
+        if key not in self.items:
+            self.log_message(f"Point cloud '{parent_name}' not found in viewer.")
+            return
+
+        point_cloud = self.items[key]
+
+        # Ensure the number of colors matches the number of points
+        num_points = len(point_cloud.points)
+        if num_points == 0:
+            self.log_message(f"Point cloud '{parent_name}' has no points.")
+            return
+
+        point_cloud.colors = o3d.utility.Vector3dVector([new_color_rgb] * num_points)
+
+        # Remove and re-add the geometry to force an update
+        self.vis.remove_geometry(point_cloud)
+        self.vis.add_geometry(point_cloud)
+
+        # Refresh the viewer
+        self.update_viewer()
+
+        self.log_message(f"Updated color of '{parent_name}' to {new_color_rgb}.")

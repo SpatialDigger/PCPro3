@@ -75,7 +75,7 @@ class MainWindow(QMainWindow):
 
         # Meta data storage
         self.metadata = {}
-
+        self.original_colors = {}
 
     def show_context_menu(self, position: QPoint):
         """Display a context menu at the right-click position with options tailored to the selected item."""
@@ -97,25 +97,20 @@ class MainWindow(QMainWindow):
             properties_action.triggered.connect(lambda: self.show_properties(item))
             menu.addAction(properties_action)
 
-            # Show Properties
-            # point_size_action = QAction("Adjust Point Size", self)
-            # point_size_action.setToolTip("Show properties of this item")
-            # point_size_action.triggered.connect(lambda: self.adjust_point_size(item))
-            # menu.addAction(point_size_action)
-
             # Color Management
             change_color_action = QAction("Change Color", self)
-            change_color_action.setToolTip("Show properties of this item")
-            change_color_action.setEnabled(False)
+            change_color_action.setToolTip("Change the color of this point cloud")
             change_color_action.triggered.connect(lambda: self.change_point_cloud_color(item))
             menu.addAction(change_color_action)
 
-            # Add "Revert to Original Color" only if the color has been changed
-            if item.text(0) in self.original_colors:
-                revert_color_action = QAction("Revert to Original Color", self)
-                revert_color_action.setToolTip("Revert the point cloud to its original color")
-                revert_color_action.triggered.connect(lambda: self.revert_point_cloud_color(item))
-                menu.addAction(revert_color_action)
+            # Add "Revert to Original Color" only if the color has been changed (stored in self.original_colors)
+            # if item.text(0) in self.original_colors:
+            revert_color_action = QAction("Revert to Original Color", self)
+            revert_color_action.setToolTip("Revert the point cloud to its original color")
+            revert_color_action.triggered.connect(lambda: self.revert_point_cloud_color(item))
+            menu.addAction(revert_color_action)
+            # else:
+            #     print(f"Revert color action NOT added for '{item.text(0)}'")  # Debugging line
 
             if parent_item:  # Child item-specific options
                 # Child-specific actions
@@ -233,57 +228,115 @@ class MainWindow(QMainWindow):
         with open(file_path, 'w') as f:
             json.dump(geojson_data, f, indent=4)
 
+    import open3d as o3d
+    # from PyQt6.QtWidgets import QColorDialog
+
+    # def change_point_cloud_color(self, item):
+    #     """Allow the user to change the color of the point cloud."""
+    #     self.add_log_message("Change color action triggered.")
+    #
+    #     if not item:
+    #         self.add_log_message("No item selected to change color.")
+    #         return
+    #
+    #     child_name = item.text(0)
+    #     parent_item = item.parent()
+    #     if not parent_item:
+    #         self.add_log_message(f"'{child_name}' does not have a parent item.")
+    #         return
+    #
+    #     parent_name = parent_item.text(0)
+    #
+    #     # Access the data using parent_name
+    #     if parent_name not in self.data or "Pointcloud" not in self.data[parent_name]:
+    #         self.add_log_message(f"No point cloud data found for '{child_name}' under '{parent_name}'.")
+    #         return
+    #
+    #     # Debug: Log that data was found
+    #     self.add_log_message(f"Data found for '{parent_name}': {self.data[parent_name]}")
+    #
+    #     # Open a color picker dialog
+    #     color = QColorDialog.getColor(
+    #         title="Select Point Cloud Color", parent=self, options=QColorDialog.ColorDialogOption.ShowAlphaChannel
+    #     )
+    #     if not color.isValid():
+    #         self.add_log_message("Color selection canceled.")
+    #         return
+    #
+    #     # Convert QColor to RGB
+    #     color_rgb = [color.redF(), color.greenF(), color.blueF()]
+    #
+    #     # Get the point cloud and number of points
+    #     point_cloud = self.data[parent_name][child_name]
+    #     num_points = len(point_cloud.points)
+    #
+    #     # Save the original colors if not already saved
+    #     if parent_name not in self.original_colors:
+    #         if not hasattr(point_cloud, "colors") or len(point_cloud.colors) != num_points:
+    #             self.add_log_message(f"Initializing default colors for {parent_name}.")
+    #             point_cloud.colors = o3d.utility.Vector3dVector([[1.0, 1.0, 1.0]] * num_points)
+    #         self.original_colors[parent_name] = point_cloud.colors
+    #
+    #     # Update the point cloud color explicitly
+    #     try:
+    #         point_cloud.colors = o3d.utility.Vector3dVector([color_rgb] * num_points)
+    #         self.o3d_viewer.update_geometry(point_cloud)  # Ensure viewer updates the point cloud
+    #         self.o3d_viewer.poll_events()
+    #         self.o3d_viewer.update_renderer()
+    #
+    #         self.add_log_message(f"Color of '{child_name}' under '{parent_name}' changed to {color.name()}.")
+    #     except Exception as e:
+    #         self.add_log_message(f"Failed to update color for '{child_name}': {str(e)}")
+
     def change_point_cloud_color(self, item):
-        """Allow the user to change the color of the point cloud."""
-        self.add_log_message("Change color action triggered.")
-
-        if not item:
-            self.add_log_message("No item selected to change color.")
-            return
-
-        child_name = item.text(0)
+        """Change the color of a point cloud."""
         parent_item = item.parent()
         if not parent_item:
-            self.add_log_message(f"'{child_name}' does not have a parent item.")
+            self.add_log_message("No parent item found.")
             return
 
         parent_name = parent_item.text(0)
+        child_name = item.text(0)
 
-        # Access the data using parent_name
-        if parent_name not in self.data or "Pointcloud" not in self.data[parent_name]:
-            self.add_log_message(f"No point cloud data found for '{child_name}' under '{parent_name}'.")
-            return
-
-        # Debug: Log that data was found
-        self.add_log_message(f"Data found for '{parent_name}': {self.data[parent_name]}")
-
-        # Open a color picker dialog
-        color = QColorDialog.getColor(
-            title="Select Point Cloud Color", parent=self, options=QColorDialog.ColorDialogOption.ShowAlphaChannel
-        )
+        color = QColorDialog.getColor()
         if not color.isValid():
-            self.add_log_message("Color selection canceled.")
+            self.add_log_message("Invalid color selected.")
             return
 
-        # Convert QColor to RGB
-        color_rgb = [color.redF(), color.greenF(), color.blueF()]
+        # Convert QColor to Open3D format (normalized)
+        red, green, blue = color.red() / 255.0, color.green() / 255.0, color.blue() / 255.0
+        new_color = [red, green, blue]
 
-        # Save the original color if not already saved
-        point_cloud = self.data[parent_name]["Pointcloud"]
-        num_points = len(point_cloud.points)
+        # Retrieve the point cloud
+        key = (parent_name, child_name)
+        if key in self.o3d_viewer.items:
+            point_cloud = self.o3d_viewer.items[key]
 
-        if parent_name not in self.original_colors:
-            if not hasattr(point_cloud, "colors") or len(point_cloud.colors) != num_points:
-                self.add_log_message(f"Initializing default colors for {parent_name}.")
-                point_cloud.colors = o3d.utility.Vector3dVector([[1.0, 1.0, 1.0]] * num_points)
-            self.original_colors[parent_name] = point_cloud.colors
+            num_points = len(point_cloud.points)
+            if num_points == 0:
+                self.add_log_message(f"Point cloud '{child_name}' under '{parent_name}' has no points.")
+                return
 
-        # Update the point cloud color
-        try:
-            self.o3d_viewer.update_point_cloud_color(parent_name, color_rgb)
-            self.add_log_message(f"Color of '{child_name}' under '{parent_name}' changed to {color.name()}.")
-        except Exception as e:
-            self.add_log_message(f"Failed to update color for '{child_name}': {str(e)}")
+            # **Store the original colors using (parent_name, child_name)**
+            if key not in self.original_colors:
+                original_colors = np.asarray(point_cloud.colors)  # Convert to NumPy array
+                if original_colors.size > 0:
+                    self.original_colors[key] = original_colors.copy()  # Store a copy
+                else:
+                    self.original_colors[key] = np.ones((num_points, 3))  # Default to white
+
+            # Apply new color to all points
+            point_cloud.colors = o3d.utility.Vector3dVector(np.tile(new_color, (num_points, 1)))
+
+            # Remove and re-add the geometry to force an update
+            self.o3d_viewer.vis.remove_geometry(point_cloud)
+            self.o3d_viewer.vis.add_geometry(point_cloud)
+
+            # Refresh viewer
+            self.o3d_viewer.update_viewer()
+            self.add_log_message(f"Color of '{child_name}' under '{parent_name}' changed to {new_color}.")
+        else:
+            self.add_log_message(f"Point cloud for '{child_name}' under '{parent_name}' not found.")
 
     def revert_point_cloud_color(self, item):
         """Revert the point cloud to its original color."""
@@ -300,20 +353,30 @@ class MainWindow(QMainWindow):
             return
 
         parent_name = parent_item.text(0)
+        key = (parent_name, child_name)  # Ensure we use the correct key
 
-        # Access the original color
-        if parent_name not in self.original_colors:
+        # Check if original colors exist
+        if key not in self.original_colors:
             self.add_log_message(f"No original color found for '{child_name}' under '{parent_name}'.")
             return
 
-        original_color = self.original_colors[parent_name]
+        # Retrieve the point cloud
+        if key in self.o3d_viewer.items:
+            point_cloud = self.o3d_viewer.items[key]
 
-        # Revert the color
-        try:
-            self.o3d_viewer.update_point_cloud_color(parent_name, original_color)
+            # Restore original per-point colors
+            original_colors = self.original_colors[key]  # Use the correct key
+            point_cloud.colors = o3d.utility.Vector3dVector(original_colors)
+
+            # Remove and re-add the geometry to update Open3D viewer
+            self.o3d_viewer.vis.remove_geometry(point_cloud)
+            self.o3d_viewer.vis.add_geometry(point_cloud)
+
+            # Refresh viewer
+            self.o3d_viewer.update_viewer()
             self.add_log_message(f"Color of '{child_name}' under '{parent_name}' reverted to original.")
-        except Exception as e:
-            self.add_log_message(f"Failed to revert color for '{child_name}': {str(e)}")
+        else:
+            self.add_log_message(f"Point cloud for '{child_name}' under '{parent_name}' not found.")
 
     def add_pointcloud(self, file_path, transform_settings=None):
         """Handles importing a point cloud and adding it to the tree and data dictionary."""
@@ -1380,6 +1443,8 @@ class MainWindow(QMainWindow):
         """Handle the close event to ensure Open3D viewer is closed."""
         self.o3d_viewer.close()
         super().closeEvent(event)
+
+
 
 
 # used for checking, remove from production
