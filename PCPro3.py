@@ -145,39 +145,55 @@ class MainWindow(QMainWindow):
 
         # Get the object to export
         obj = self.data[parent_name][child_name]
-        if not isinstance(obj, o3d.geometry.PointCloud):
-            self.add_log_message(f"Export failed: '{child_name}' is not a point cloud.")
-            return
+        if  isinstance(obj, o3d.geometry.PointCloud):
+            # Open file dialog for export
+            file_dialog = QFileDialog(self)
+            file_dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
+            file_dialog.setNameFilters([
+                "PCD Files (*.pcd)",
+                "LAS Files (*.las)",
+                "XYZ Files (*.xyz)",
+                "PLY Files (*.ply)",
+                # "GeoJSON Files (*.geojson)",
+            ])
+            if file_dialog.exec() == QFileDialog.DialogCode.Accepted:
+                export_path = file_dialog.selectedFiles()[0]
+                self.perform_export(obj, export_path)
+        elif  isinstance(obj, o3d.geometry.TriangleMesh):
+            # Open file dialog for export
+            file_dialog = QFileDialog(self)
+            file_dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
+            file_dialog.setNameFilters([
+                # "PCD Files (*.pcd)",
+                # "LAS Files (*.las)",
+                # "XYZ Files (*.xyz)",
+                "PLY Files (*.ply)",
+                # "GeoJSON Files (*.geojson)",
+            ])
+            if file_dialog.exec() == QFileDialog.DialogCode.Accepted:
+                export_path = file_dialog.selectedFiles()[0]
+                self.perform_export(obj, export_path)
 
-        # Open file dialog for export
-        file_dialog = QFileDialog(self)
-        file_dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
-        file_dialog.setNameFilters([
-            "PCD Files (*.pcd)",
-            "LAS Files (*.las)",
-            "XYZ Files (*.xyz)",
-            "PLY Files (*.ply)",
-            "GeoJSON Files (*.geojson)",
-        ])
-        if file_dialog.exec() == QFileDialog.DialogCode.Accepted:
-            export_path = file_dialog.selectedFiles()[0]
-            self.perform_export(obj, export_path)
-
-    def perform_export(self, point_cloud, file_path):
+    def perform_export(self, item, file_path):
         """Perform the export of the Open3D point cloud to the specified file format."""
         file_format = file_path.split('.')[-1].lower()
 
         try:
             if file_format == "pcd":
-                o3d.io.write_point_cloud(file_path, point_cloud, write_ascii=True)
+                o3d.io.write_point_cloud(file_path, item, write_ascii=True)
             elif file_format == "las":
-                self.export_to_las(point_cloud, file_path)
+                self.export_to_las(item, file_path)
             elif file_format == "xyz":
-                o3d.io.write_point_cloud(file_path, point_cloud, write_ascii=True)
+                o3d.io.write_point_cloud(file_path, item, write_ascii=True)
             elif file_format == "ply":
-                o3d.io.write_point_cloud(file_path, point_cloud, write_ascii=True)
+                if isinstance(item, o3d.geometry.PointCloud):
+                    o3d.io.write_point_cloud(file_path, item, write_ascii=True)
+                    print(f"PointCloud saved to {file_path}")
+                elif isinstance(item, o3d.geometry.TriangleMesh):
+                    o3d.io.write_triangle_mesh(file_path, item, write_ascii=True)
+                    print(f"Mesh saved to {file_path}")
             elif file_format == "geojson":
-                self.export_to_geojson(point_cloud, file_path)
+                self.export_to_geojson(item, file_path)
             else:
                 self.add_log_message(f"Unsupported export format: {file_format}")
                 return
