@@ -109,13 +109,8 @@ class MainWindow(QMainWindow):
             revert_color_action.setToolTip("Revert the point cloud to its original color")
             revert_color_action.triggered.connect(lambda: self.revert_point_cloud_color(item))
             menu.addAction(revert_color_action)
-            # else:
-            #     print(f"Revert color action NOT added for '{item.text(0)}'")  # Debugging line
 
-            if parent_item:  # Child item-specific options
-                # Child-specific actions
-
-                # Export
+            if parent_item:
                 action_export = QAction("Export", self)
                 action_export.setToolTip("Export this item to a file")
                 action_export.triggered.connect(lambda: self.export_item(item))
@@ -243,66 +238,6 @@ class MainWindow(QMainWindow):
 
         with open(file_path, 'w') as f:
             json.dump(geojson_data, f, indent=4)
-
-    import open3d as o3d
-    # from PyQt6.QtWidgets import QColorDialog
-
-    # def change_point_cloud_color(self, item):
-    #     """Allow the user to change the color of the point cloud."""
-    #     self.add_log_message("Change color action triggered.")
-    #
-    #     if not item:
-    #         self.add_log_message("No item selected to change color.")
-    #         return
-    #
-    #     child_name = item.text(0)
-    #     parent_item = item.parent()
-    #     if not parent_item:
-    #         self.add_log_message(f"'{child_name}' does not have a parent item.")
-    #         return
-    #
-    #     parent_name = parent_item.text(0)
-    #
-    #     # Access the data using parent_name
-    #     if parent_name not in self.data or "Pointcloud" not in self.data[parent_name]:
-    #         self.add_log_message(f"No point cloud data found for '{child_name}' under '{parent_name}'.")
-    #         return
-    #
-    #     # Debug: Log that data was found
-    #     self.add_log_message(f"Data found for '{parent_name}': {self.data[parent_name]}")
-    #
-    #     # Open a color picker dialog
-    #     color = QColorDialog.getColor(
-    #         title="Select Point Cloud Color", parent=self, options=QColorDialog.ColorDialogOption.ShowAlphaChannel
-    #     )
-    #     if not color.isValid():
-    #         self.add_log_message("Color selection canceled.")
-    #         return
-    #
-    #     # Convert QColor to RGB
-    #     color_rgb = [color.redF(), color.greenF(), color.blueF()]
-    #
-    #     # Get the point cloud and number of points
-    #     point_cloud = self.data[parent_name][child_name]
-    #     num_points = len(point_cloud.points)
-    #
-    #     # Save the original colors if not already saved
-    #     if parent_name not in self.original_colors:
-    #         if not hasattr(point_cloud, "colors") or len(point_cloud.colors) != num_points:
-    #             self.add_log_message(f"Initializing default colors for {parent_name}.")
-    #             point_cloud.colors = o3d.utility.Vector3dVector([[1.0, 1.0, 1.0]] * num_points)
-    #         self.original_colors[parent_name] = point_cloud.colors
-    #
-    #     # Update the point cloud color explicitly
-    #     try:
-    #         point_cloud.colors = o3d.utility.Vector3dVector([color_rgb] * num_points)
-    #         self.o3d_viewer.update_geometry(point_cloud)  # Ensure viewer updates the point cloud
-    #         self.o3d_viewer.poll_events()
-    #         self.o3d_viewer.update_renderer()
-    #
-    #         self.add_log_message(f"Color of '{child_name}' under '{parent_name}' changed to {color.name()}.")
-    #     except Exception as e:
-    #         self.add_log_message(f"Failed to update color for '{child_name}': {str(e)}")
 
     def change_point_cloud_color(self, item):
         """Change the color of a point cloud."""
@@ -583,11 +518,6 @@ class MainWindow(QMainWindow):
                     self.remove_from_tree_and_data(parent_name)
                     processed_parents.add(parent_name)
 
-        # Ensure original point cloud visibility is handled explicitly
-        # self.o3d_viewer.update_viewer_state()
-
-
-
     def add_child_to_tree_and_data(self, parent_name, child_name, data):
         """Handles adding both parent and child items to the tree and updating the data dictionary."""
         # Check if the parent item exists in the tree; create it if not
@@ -623,11 +553,6 @@ class MainWindow(QMainWindow):
         # Ensure the point cloud is added to the Open3D viewer
         self.o3d_viewer.add_item(data, parent_name, child_name)
         self.add_log_message(f"add_child_to_tree_and_data: '{child_name}' added to Open3D viewer.")
-
-        # import pprint
-        #
-        # # Assuming self.data is a dictionary
-        # pprint.pprint(self.data)
 
     def remove_from_tree_and_data(self, parent_name, child_name=None):
         if parent_name not in self.data:
@@ -714,7 +639,6 @@ class MainWindow(QMainWindow):
 
     def on_item_changed(self, item):
         is_checked = item.checkState(0) == Qt.CheckState.Checked
-
         # Prevent infinite loops
         self.tree.blockSignals(True)
         try:
@@ -725,13 +649,11 @@ class MainWindow(QMainWindow):
                     child_item = item.child(i)
                     child_item.setCheckState(0, Qt.CheckState.Checked if is_checked else Qt.CheckState.Unchecked)
                     child_name = child_item.text(0)
-
                     # Toggle visibility in the viewer
                     self.o3d_viewer.toggle_item_visibility(parent_name, child_name, is_checked)
             else:  # Child-level changes
                 parent_name = item.parent().text(0)
                 child_name = item.text(0)
-
                 # Toggle visibility in the viewer
                 self.o3d_viewer.toggle_item_visibility(parent_name, child_name, is_checked)
         finally:
@@ -739,7 +661,6 @@ class MainWindow(QMainWindow):
 
     def apply_spatial_transformation(self):
         """Applies spatial transformation to selected point clouds."""
-
         selected_items = self.selected_items()
 
         # Collect selected point clouds
@@ -890,7 +811,6 @@ class MainWindow(QMainWindow):
 
         merge_action = QAction("Merge", self)
         merge_action.setToolTip("Merge selected pointclouds")
-        # merge_action.triggered.connect(self.merge_items)
         merge_action.setEnabled(True)
         merge_action.triggered.connect(lambda: merge_items(self, self.selected_items()))
         edit_menu.addAction(merge_action)
@@ -906,7 +826,6 @@ class MainWindow(QMainWindow):
         spatial_transformation_action.setEnabled(True)
         spatial_transformation_action.triggered.connect(self.apply_spatial_transformation)
         edit_menu.addAction(spatial_transformation_action)
-
 
         # View Menu
         view_menu = menu_bar.addMenu("View")
@@ -977,7 +896,7 @@ class MainWindow(QMainWindow):
         fill_holes_action = QAction("delaunay3d", self)
         fill_holes_action.setToolTip("Substitute Points")
         fill_holes_action.setEnabled(False)
-        fill_holes_action.triggered.connect(lambda: ball_pivoting_triangulation(self, self.selected_items()))
+        # fill_holes_action.triggered.connect(lambda: ball_pivoting_triangulation(self, self.selected_items()))
         filters_menu.addAction(fill_holes_action)
 
         add_bounding_box_action = QAction("Bounding Box", self)
@@ -1013,7 +932,6 @@ class MainWindow(QMainWindow):
         # color_mapping_action.setEnabled(False)  # Not implemented yet
         # filters_menu.addAction(color_mapping_action)
 
-
         # calculate_action = QAction("Calculate", self)
         # calculate_action.setToolTip("Sample the pointcloud data")
         # calculate_action.triggered.connect(self.calculate_stats)
@@ -1025,8 +943,6 @@ class MainWindow(QMainWindow):
         remove_items_action.setEnabled(True)
         remove_items_action.triggered.connect(self.remove_selected_items)
         tools_menu.addAction(remove_items_action)
-
-
 
 
         # Analysis Menu

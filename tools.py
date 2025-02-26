@@ -2,25 +2,13 @@ import open3d as o3d
 import numpy as np
 import random
 
-from dialogs_pyqt5 import (DistanceFilterDialog, SampleDialog, PoissonSurfaceDialog,
-                     ScaleFactorDialog)
-
 from dialogs_pyqt5 import (
-    # DistanceFilterDialog,
-    SampleDialog,
-    # PoissonSurfaceDialog,
-    ScaleFactorDialog)
+    DistanceFilterDialog, SampleDialog, PoissonSurfaceDialog,
+                     )
+
 import scipy.spatial
-
-import open3d as o3d
-import numpy as np
-
-
+import trimesh
 from PyQt5.QtWidgets import QApplication, QDialog, QVBoxLayout, QComboBox, QPushButton, QLabel, QDialogButtonBox, QLineEdit, QHBoxLayout
-
-def fill_holes(self, selected_items):
-    pass
-
 
 def fill_holes_delaunay3d(self, selected_items):
     """
@@ -93,19 +81,6 @@ def fill_holes_delaunay3d(self, selected_items):
     self.o3d_viewer.update_viewer()
     self.add_log_message("Viewer updated with hole-filled point cloud.")
 
-
-import open3d as o3d
-# import pyvista as pv
-import numpy as np
-
-import trimesh
-import open3d as o3d
-import numpy as np
-
-import trimesh
-import open3d as o3d
-import numpy as np
-
 def delaunay3d_mesh(self, selected_items):
     print("Running 3D triangulation with trimesh...")
 
@@ -163,92 +138,6 @@ def delaunay3d_mesh(self, selected_items):
 
     self.add_log_message("Viewer updated with trimesh triangulation.")
 
-
-import open3d as o3d
-import numpy as np
-
-import open3d as o3d
-import numpy as np
-
-#
-# def triangulate2_5d_ball_pivoting(self, selected_items):
-#     print("Running 2.5D triangulation using Ball-Pivoting...")
-#
-#     for item in selected_items:
-#         if item.parent():
-#             parent_name = item.parent().text(0)
-#             child_name = item.text(0)
-#         else:
-#             self.add_log_message("Top-level items cannot be processed directly.")
-#             continue
-#
-#         # Retrieve the point cloud
-#         data = self.data.get(parent_name)
-#         if not data:
-#             self.add_log_message(f"No valid point cloud found for {parent_name}. Skipping.")
-#             continue
-#         point_dataset = data[child_name]
-#
-#         # Convert Open3D point cloud to numpy array
-#         points = np.asarray(point_dataset.points)
-#         if len(points) < 3:
-#             self.add_log_message(f"Error: {parent_name} does not have enough points for triangulation.")
-#             continue
-#
-#         # 1️⃣ Ensure the point cloud has normals
-#         if not point_dataset.has_normals():
-#             self.add_log_message("Estimating normals...")
-#             point_dataset.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30))
-#
-#             # 2️⃣ Orient normals consistently
-#             point_dataset.orient_normals_consistent_tangent_plane(k=30)
-#
-#             # Optionally, perform normal smoothing to reduce outliers
-#             point_dataset = smooth_normals(point_dataset)
-#
-#         # 3️⃣ Check if normals are consistent after orientation
-#         if not np.allclose(np.asarray(point_dataset.normals).mean(axis=0), np.zeros(3)):
-#             self.add_log_message(f"Warning: Normals for {parent_name} are still inconsistent after orientation.")
-#
-#         # 4️⃣ Ball-Pivoting surface reconstruction
-#         radii = [0.05, 0.1, 0.2]  # Adjust based on point spacing
-#         bpa_mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(
-#             point_dataset, o3d.utility.DoubleVector(radii)
-#         )
-#
-#         if len(bpa_mesh.triangles) == 0:
-#             self.add_log_message(f"Error: No valid BPA mesh generated for {parent_name}.")
-#             continue
-#
-#         # Store and display the triangulated surface
-#         self.data[parent_name]["BPA_2.5D"] = bpa_mesh
-#         self.add_child_to_tree_and_data(parent_name, "BPA_2.5D", bpa_mesh)
-#
-#         try:
-#             self.o3d_viewer.add_item(bpa_mesh, parent_name, "BPA_2.5D")
-#         except Exception as e:
-#             self.add_log_message(f"Warning: Open3D viewer failed to render mesh: {e}")
-#
-#         self.add_log_message(f"2.5D BPA triangulated surface added: BPA_2.5D")
-#
-#     # Update viewer safely
-#     try:
-#         self.o3d_viewer.update_viewer()
-#     except Exception as e:
-#         self.add_log_message(f"Warning: Viewer update failed: {e}")
-#
-#     self.add_log_message("Viewer updated with Ball-Pivoting 2.5D triangulation.")
-#
-#
-#
-
-
-
-
-
-
-
-
 def convexhull3d(self, selected_items):
     # Retrieve selected items from the tree
     # selected_items = self.selected_items()
@@ -299,8 +188,6 @@ def convexhull3d(self, selected_items):
     # Update the viewer
     self.o3d_viewer.update_viewer()
     self.add_log_message("Viewer updated with ConvexHull.")
-
-
 
 def poisson_surface_reconstruction(self, selected_items):
     # Show dialog to get parameters (depth, width, scale)
@@ -360,8 +247,6 @@ def poisson_surface_reconstruction(self, selected_items):
     # Update the viewer
     self.o3d_viewer.update_viewer()
     self.add_log_message("Viewer updated with Poisson surface reconstruction.")
-
-
 
 def boundingbox3d(self, selected_items): # todo not working
     print("Not opening ConvexHull dialog...")  # Debugging
@@ -457,13 +342,6 @@ def boundingbox3d(self, selected_items): # todo not working
     # Update the viewer
     self.o3d_viewer.update_viewer()
     self.add_log_message("Viewer updated with ConvexHull and Bounding Boxes.")
-
-
-
-
-
-
-
 
 def filter_points_by_distance(self, selected_items):
     """Filters points from two selected point clouds based on the minimum distance between them."""
@@ -747,19 +625,6 @@ def sampling(self, selected_items):
         self.o3d_viewer.update_viewer()
         self.add_log_message("Viewer updated with sampled pointclouds.")
 
-
-
-
-
-
-
-
-
-
-
-#
-
-
 class TopBaseSelectionDialog(QDialog):
     def __init__(self, selected_items, parent=None):
         super().__init__(parent)
@@ -827,15 +692,6 @@ class TopBaseSelectionDialog(QDialog):
         except ValueError:
             # Handle invalid input (non-numeric)
             return top_cloud_name, base_cloud_name, None
-
-
-import numpy as np
-
-import numpy as np
-import open3d as o3d
-
-import numpy as np
-import open3d as o3d
 
 def substitute_points(self, selected_items):
     print("Opening substitute points dialog...")
@@ -926,20 +782,6 @@ def substitute_points(self, selected_items):
 
         # Log completion message
         self.add_log_message(f"Substitution completed: '{top_cloud_name}_updated' and '{base_cloud_name}_remaining' created.")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 def merge_items(self, selected_items):
     """
