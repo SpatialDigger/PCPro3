@@ -23,7 +23,9 @@ from dialogs_pyqt5 import (
 )
 from PyQt5.QtCore import  QUrl
 
-
+from io_pcpro import (
+    export_item
+)
 
 from tools import (
     convexhull3d, filter_points_by_distance, sampling,
@@ -117,7 +119,7 @@ class MainWindow(QMainWindow):
             if parent_item:
                 action_export = QAction("Export", self)
                 action_export.setToolTip("Export this item to a file")
-                action_export.triggered.connect(lambda: self.export_item(item))
+                action_export.triggered.connect(lambda: export_item(self, self.selected_items()))  # Passing `self` and the selected item
                 menu.addAction(action_export)
 
             else:  # Parent item-specific options
@@ -128,120 +130,6 @@ class MainWindow(QMainWindow):
 
             menu.exec(self.tree.viewport().mapToGlobal(position))
 
-    def export_item(self, item):
-        """Export the selected item (child object) to a user-specified format."""
-        parent_item = item.parent()
-        if not parent_item:
-            self.add_log_message("Export is only supported for child items.")
-            return
-
-        parent_name = parent_item.text(0)
-        child_name = item.text(0)
-
-        if parent_name not in self.data or child_name not in self.data[parent_name]:
-            self.add_log_message(f"Export failed: Could not locate data for '{child_name}' under '{parent_name}'.")
-            return
-
-        # Get the object to export
-        obj = self.data[parent_name][child_name]
-        if  isinstance(obj, o3d.geometry.PointCloud):
-            # Open file dialog for export
-            file_dialog = QFileDialog(self)
-            file_dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
-            file_dialog.setNameFilters([
-                "PCD Files (*.pcd)",
-                "LAS Files (*.las)",
-                "XYZ Files (*.xyz)",
-                "PLY Files (*.ply)",
-                # "GeoJSON Files (*.geojson)",
-            ])
-            if file_dialog.exec() == QFileDialog.DialogCode.Accepted:
-                export_path = file_dialog.selectedFiles()[0]
-                self.perform_export(obj, export_path)
-        elif  isinstance(obj, o3d.geometry.TriangleMesh):
-            # Open file dialog for export
-            file_dialog = QFileDialog(self)
-            file_dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptSave)
-            file_dialog.setNameFilters([
-                # "PCD Files (*.pcd)",
-                # "LAS Files (*.las)",
-                # "XYZ Files (*.xyz)",
-                "PLY Files (*.ply)",
-                # "GeoJSON Files (*.geojson)",
-            ])
-            if file_dialog.exec() == QFileDialog.DialogCode.Accepted:
-                export_path = file_dialog.selectedFiles()[0]
-                self.perform_export(obj, export_path)
-
-    def perform_export(self, item, file_path):
-        """Perform the export of the Open3D point cloud to the specified file format."""
-        file_format = file_path.split('.')[-1].lower()
-
-        try:
-            if file_format == "pcd":
-                o3d.io.write_point_cloud(file_path, item, write_ascii=True)
-            elif file_format == "las":
-                self.export_to_las(item, file_path)
-            elif file_format == "xyz":
-                o3d.io.write_point_cloud(file_path, item, write_ascii=True)
-            elif file_format == "ply":
-                if isinstance(item, o3d.geometry.PointCloud):
-                    o3d.io.write_point_cloud(file_path, item, write_ascii=True)
-                    print(f"PointCloud saved to {file_path}")
-                elif isinstance(item, o3d.geometry.TriangleMesh):
-                    o3d.io.write_triangle_mesh(file_path, item, write_ascii=True)
-                    print(f"Mesh saved to {file_path}")
-            elif file_format == "geojson":
-                self.export_to_geojson(item, file_path)
-            else:
-                self.add_log_message(f"Unsupported export format: {file_format}")
-                return
-
-            self.add_log_message(f"Exported point cloud to {file_path}.")
-        except Exception as e:
-            self.add_log_message(f"Export failed: {str(e)}")
-
-    def export_to_las(self, point_cloud, file_path):
-        """Export an Open3D point cloud to LAS format."""
-        points = np.asarray(point_cloud.points)
-        colors = np.asarray(point_cloud.colors)
-
-        # Create a LAS file
-        header = laspy.LasHeader(point_format=3, version="1.4")
-        las = laspy.LasData(header)
-
-        # Assign points
-        las.x, las.y, las.z = points[:, 0], points[:, 1], points[:, 2]
-
-        if colors.size > 0:
-            # Convert from [0,1] to [0,65535] and cast to uint16
-            las.red = (colors[:, 0] * 65535).astype(np.uint16)
-            las.green = (colors[:, 1] * 65535).astype(np.uint16)
-            las.blue = (colors[:, 2] * 65535).astype(np.uint16)
-
-        las.write(file_path)
-
-    def export_to_geojson(self, point_cloud, file_path):
-        """Export an Open3D point cloud to GeoJSON format."""
-        import json
-
-        points = np.asarray(point_cloud.points)
-        geojson_data = {
-            "type": "FeatureCollection",
-            "features": []
-        }
-
-        for point in points:
-            geojson_data["features"].append({
-                "type": "Feature",
-                "geometry": {
-                    "type": "Point",
-                    "coordinates": point.tolist()  # GeoJSON expects [longitude, latitude, altitude]
-                }
-            })
-
-        with open(file_path, 'w') as f:
-            json.dump(geojson_data, f, indent=4)
 
     def change_point_cloud_color(self, item):
         """Change the color of a point cloud."""
