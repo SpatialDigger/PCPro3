@@ -10,16 +10,20 @@ from pprint import pformat
 from sklearn.cluster import DBSCAN
 from shapely.geometry import Point, Polygon, MultiLineString, LineString
 from shapely.ops import unary_union
+from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QTreeWidget, QAbstractItemView,
     QApplication, QAction, QMenu,
-    QFileDialog, QColorDialog, QTreeWidgetItem, QDialog
+    QFileDialog, QColorDialog, QTreeWidgetItem, QDialog, QAction
 )
-from PyQt5.QtCore import Qt, QTimer, QPoint
+from PyQt5.QtCore import Qt, QTimer, QPoint, QUrl
 from viewer import Open3DViewer
 from dialogs_pyqt5 import (
     LogWindow, PropertiesDialog, TransformationDialog, DBSCANDialog,
 )
+from PyQt5.QtCore import  QUrl
+
+
 
 from tools import (
     convexhull3d, filter_points_by_distance, sampling,
@@ -744,6 +748,12 @@ class MainWindow(QMainWindow):
             # Refresh the Open3D viewer
             self.o3d_viewer.update_viewer()
 
+
+    # Define a function to open the URL
+    @staticmethod
+    def open_user_guide():
+        QDesktopServices.openUrl(QUrl("https://github.com/SpatialDigger/PCPro3/tree/main/docs"))
+
     def create_menu_bar(self):
         menu_bar = self.menuBar()
 
@@ -987,8 +997,9 @@ class MainWindow(QMainWindow):
         help_menu = menu_bar.addMenu("Help")
 
         user_guide_action = QAction("User Guide", self)
-        user_guide_action.setToolTip("Feature not yet implemented")
-        user_guide_action.setEnabled(False)  # Not implemented yet
+        user_guide_action.setToolTip("Opens the User Guide")
+        user_guide_action.setEnabled(True)  # Make it enabled now
+        user_guide_action.triggered.connect(self.open_user_guide)
         help_menu.addAction(user_guide_action)
 
         keyboard_shortcuts_action = QAction("Keyboard Shortcuts", self)
