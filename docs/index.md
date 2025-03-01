@@ -7,11 +7,11 @@ Welcome to the official documentation for the **Pointcloud Processor**. This gui
 # PCPro
 
 ## Overview
-PCPro is a high-performance point cloud processing tool designed for efficient 3D data manipulation and analysis. Built using Python 3.12+ and Open3D, it enables users to process, visualize, and analyze large-scale point clouds with ease.
+PCPro is a high-performance point cloud processing tool designed for efficient 3D data manipulation and analysis. Built using Python 3.12+ and Open3D, it enables users to process, visualis, and analyse large-scale point clouds with ease.
 
 ## Features
 - **Point Cloud Processing**: Load, filter, and manipulate point cloud data.
-- **Visualization**: Render 3D point clouds with interactive controls.
+- **Visualisation**: Render 3D point clouds with interactive controls.
 - **Segmentation & Clustering**: Extract meaningful structures from raw data.
 - **Transformation Tools**: Apply scaling, rotation, and translation.
 - **File Format Support**: Work with PLY, LAS, and other common formats.

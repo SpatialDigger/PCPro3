@@ -5,21 +5,24 @@ import warnings
 import numpy as np
 import laspy
 import open3d as o3d
+import webbrowser
+
 
 from pprint import pformat
 from sklearn.cluster import DBSCAN
 from shapely.geometry import Point, Polygon, MultiLineString, LineString
 from shapely.ops import unary_union
-from PyQt5.QtGui import QDesktopServices
+from PyQt5.QtGui import QDesktopServices, QPixmap
 from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QTreeWidget, QAbstractItemView,
     QApplication, QAction, QMenu,
-    QFileDialog, QColorDialog, QTreeWidgetItem, QDialog, QAction
+    QFileDialog, QColorDialog, QTreeWidgetItem, QDialog, QAction, QMessageBox,
+    QLabel, QPushButton
 )
 from PyQt5.QtCore import Qt, QTimer, QPoint, QUrl
 from viewer import Open3DViewer
 from dialogs_pyqt5 import (
-    LogWindow, PropertiesDialog, TransformationDialog, DBSCANDialog,
+    LogWindow, PropertiesDialog, TransformationDialog, DBSCANDialog, AboutDialog, KeyboardShortcutsDialog
 )
 from PyQt5.QtCore import  QUrl
 
@@ -38,6 +41,19 @@ from normals import(
 
 # Suppress deprecation warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+
+
+import sys
+from PyQt5.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout, QHBoxLayout
+
+from PyQt5.QtCore import Qt, QUrl
+from PyQt5.QtGui import QDesktopServices
+
+
+
+
+
 
 
 class MainWindow(QMainWindow):
@@ -383,12 +399,14 @@ class MainWindow(QMainWindow):
 
         keyboard_shortcuts_action = QAction("Keyboard Shortcuts", self)
         keyboard_shortcuts_action.setToolTip("Feature not yet implemented")
-        keyboard_shortcuts_action.setEnabled(False)  # Not implemented yet
+        keyboard_shortcuts_action.setEnabled(True)
+        keyboard_shortcuts_action.triggered.connect(lambda: self.show_keyboard_dialog())
         help_menu.addAction(keyboard_shortcuts_action)
 
         about_action = QAction("About", self)
         about_action.setToolTip("Feature not yet implemented")
-        about_action.setEnabled(False)  # Not implemented yet
+        about_action.setEnabled(True)
+        about_action.triggered.connect(lambda: self.show_about_dialog())
         help_menu.addAction(about_action)
 
         # Debug menu
@@ -403,6 +421,18 @@ class MainWindow(QMainWindow):
         debug_menu.addAction(debug_action)
 
     #####
+    # def show_about_dialog(self):
+    #     QMessageBox.about(self, "About", "This is a sample PyQt5 application.\nVersion: 1.0\nAuthor: Your Name")
+
+    def show_about_dialog(self):
+        dialog = AboutDialog()
+        dialog.exec_()
+
+    def show_keyboard_dialog(self):
+        dialog = KeyboardShortcutsDialog()
+        dialog.exec_()
+
+
 
     def add_pointcloud(self, file_path, transform_settings=None):
         """Handles importing a point cloud and adding it to the tree and data dictionary."""

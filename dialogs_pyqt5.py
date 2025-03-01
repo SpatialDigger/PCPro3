@@ -1,10 +1,184 @@
 import numpy as np
 import open3d as o3d
+from PyQt5.QtCore import Qt, QUrl
+from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QComboBox, QCheckBox, QPushButton,
     QHBoxLayout, QDialogButtonBox, QDoubleSpinBox, QSpinBox, QLineEdit,
     QTextEdit, QSlider, QApplication, QFormLayout, QFileDialog
 )
+
+from PyQt5.QtSvg import QSvgWidget
+
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QDialog, QDialogButtonBox, QPushButton
+from PyQt5.QtCore import Qt
+
+
+class KeyboardShortcutsDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        # Set up the dialog window
+        self.setWindowTitle("Keyboard Shortcuts")
+        self.setModal(True)
+
+        # Layout for the dialog content
+        layout = QVBoxLayout()
+
+        # Label with keyboard shortcuts info
+        shortcuts_text = """
+        <h3>[Open3D] -- Mouse view control --</h3>
+        <ul>
+            <li><b>Left button + drag</b>: Rotate.</li>
+            <li><b>Ctrl + left button + drag</b>: Translate.</li>
+            <li><b>Wheel button + drag</b>: Translate.</li>
+            <li><b>Shift + left button + drag</b>: Roll.</li>
+            <li><b>Wheel</b>: Zoom in/out.</li>
+        </ul>
+
+        <h3>[Open3D] -- Keyboard view control --</h3>
+        <ul>
+            <li><b>/</b>: Increase/decrease field of view.</li>
+            <li><b>R</b>: Reset view point.</li>
+            <li><b>Ctrl/Cmd + C</b>: Copy current view status into clipboard.</li>
+            <li><b>Ctrl/Cmd + V</b>: Paste view status from clipboard.</li>
+        </ul>
+
+        <h3>[Open3D] -- General control --</h3>
+        <ul>
+            <li><b>Q, Esc</b>: Exit window.</li>
+            <li><b>H</b>: Print help message.</li>
+            <li><b>P, PrtScn</b>: Take a screen capture.</li>
+            <li><b>D</b>: Take a depth capture.</li>
+            <li><b>O</b>: Take a capture of current rendering settings.</li>
+            <li><b>Alt + Enter</b>: Toggle between full screen and windowed mode.</li>
+        </ul>
+
+        <h3>[Open3D] -- Render mode control --</h3>
+        <ul>
+            <li><b>L</b>: Turn on/off lighting.</li>
+            <li><b>+/-</b>: Increase/decrease point size.</li>
+            <li><b>Ctrl + +/-</b>: Increase/decrease width of geometry::LineSet.</li>
+            <li><b>N</b>: Turn on/off point cloud normal rendering.</li>
+            <li><b>S</b>: Toggle between mesh flat shading and smooth shading.</li>
+            <li><b>W</b>: Turn on/off mesh wireframe.</li>
+            <li><b>B</b>: Turn on/off back face rendering.</li>
+            <li><b>I</b>: Turn on/off image zoom in interpolation.</li>
+            <li><b>T</b>: Toggle among image render (no stretch / keep ratio / freely stretch).</li>
+        </ul>
+
+        <h3>[Open3D INFO] -- Color control --</h3>
+        <ul>
+            <li><b>0..4,9</b>: Set point cloud color option.
+                <ul>
+                    <li><b>0</b>: Default behavior, renders the point cloud in its original colors.</li>
+                    <li><b>1</b>: Render the point cloud using the actual point color (if available).</li>
+                    <li><b>2</b>: Color points based on the <i>x</i> coordinate value (mapping the x-coordinate to a color scale).</li>
+                    <li><b>3</b>: Color points based on the <i>y</i> coordinate value (mapping the y-coordinate to a color scale).</li>
+                    <li><b>4</b>: Color points based on the <i>z</i> coordinate value (mapping the z-coordinate to a color scale).</li>
+                    <li><b>9</b>: Color points based on their normals, where the normal vector is mapped to colors (usually with red, green, and blue representing the different axes of the vector).</li>
+                </ul>
+            </li>
+            <li><b>Ctrl + 0..4,9</b>: Set mesh color option.
+                <ul>
+                    <li><b>0</b>: Default behavior for meshes, rendering them in a uniform gray color.</li>
+                    <li><b>1</b>: Render mesh with the same color as the point cloud (if point cloud color exists).</li>
+                    <li><b>2</b>: Color the mesh based on the <i>x</i> coordinate value (mapping the x-coordinate to a color scale).</li>
+                    <li><b>3</b>: Color the mesh based on the <i>y</i> coordinate value (mapping the y-coordinate to a color scale).</li>
+                    <li><b>4</b>: Color the mesh based on the <i>z</i> coordinate value (mapping the z-coordinate to a color scale).</li>
+                    <li><b>9</b>: Color the mesh based on normals, similar to point cloud coloring, using the normal vector.</li>
+                </ul>
+            </li>
+            <li><b>Shift + 0..4</b>: Color map options for rendering.
+                <ul>
+                    <li><b>0</b>: Use a grayscale color map for the point cloud or mesh, where color intensity reflects depth or coordinate values.</li>
+                    <li><b>1</b>: Apply a <b>JET</b> color map, a spectrum of colors from blue to red, often used for heatmaps or scientific data visualization.</li>
+                    <li><b>2</b>: Use the <b>SUMMER</b> color map, which has a gradient from green to yellow, commonly used for terrain mapping.</li>
+                    <li><b>3</b>: Use the <b>WINTER</b> color map, which is a gradient from blue to green, giving a cool color palette.</li>
+                    <li><b>4</b>: Use the <b>HOT</b> color map, a spectrum from black through red, orange, yellow, and white, typically used for heatmaps.</li>
+                </ul>
+            </li>
+        </ul>
+        """
+
+
+
+
+        # Create the label for displaying the shortcuts
+        shortcuts_label = QLabel(shortcuts_text)
+        shortcuts_label.setTextFormat(Qt.RichText)  # Set text format to rich text
+        shortcuts_label.setOpenExternalLinks(True)  # Enable clickable links
+        shortcuts_label.setAlignment(Qt.AlignTop)
+
+        # Add the label to the layout
+        layout.addWidget(shortcuts_label)
+
+        # Add a Close button
+        close_button = QPushButton("Close")
+        close_button.clicked.connect(self.close)
+        layout.addWidget(close_button, alignment=Qt.AlignCenter)
+
+        # Set the layout for the dialog
+        self.setLayout(layout)
+
+
+class AboutDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("About")
+        self.setFixedSize(350, 200)
+
+        layout = QVBoxLayout()
+
+        # App info
+        about_label = QLabel(
+            "<h2>PCPro3</h2>"
+            "<p><b>Version:</b> 2025 0.1.2</p>"
+            "<p><b>Author:</b> Gary Nobles</p>"
+            "<p><b>Description:</b> A Pointcloud-focused application designed to <br/> enhance productivity and streamline workflows.</p>"
+            "<p><b>License:</b> GNU GENERAL PUBLIC LICENSE</p>"
+            # "<p><b>Website:</b> <a href='https://github.com/SpatialDigger/PCPro3'>Project GitHub</a></p>"
+        )
+        about_label.setOpenExternalLinks(True)
+        about_label.setAlignment(Qt.AlignCenter)
+
+
+        # GitHub Icon & Link Layout
+        github_layout = QHBoxLayout()
+
+        # GitHub SVG Icon
+        self.github_icon = QSvgWidget()
+        self.github_icon.load(b'''<svg xmlns="http://www.w3.org/2000/svg" height="30" fill="black" viewBox="0 0 512 512">
+        <path d="M256,32C132.3,32,32,132.3,32,256c0,99.9,64.8,184.6,154.7,214.7c11.3,2.1,15.5-4.9,15.5-11V421
+        c-62.9,13.7-76.2-30.4-76.2-30.4c-10.3-26.2-25.2-33.2-25.2-33.2c-20.6-14.1,1.6-13.8,1.6-13.8c22.8,1.6,34.8,23.4,34.8,23.4
+        c20.2,34.6,53,24.6,65.9,18.8c2.1-14.6,7.9-24.6,14.4-30.3c-50.2-5.7-103-25.1-103-111.8c0-24.7,8.8-44.9,23.2-60.7
+        c-2.3-5.7-10.1-28.5,2.2-59.4c0,0,19-6.1,62.3,23.2c18-5,37.3-7.5,56.5-7.6c19.2,0.1,38.5,2.6,56.5,7.6
+        c43.3-29.3,62.3-23.2,62.3-23.2c12.3,30.9,4.5,53.7,2.2,59.4c14.4,15.8,23.2,36,23.2,60.7c0,86.9-52.9,106-103.2,111.6
+        c8.1,7,15.5,20.9,15.5,42.2v62.6c0,6.2,4.2,13.2,15.6,11C415.2,440.6,480,355.9,480,256C480,132.3,379.7,32,256,32z"/>
+        </svg>''')
+        self.github_icon.setFixedSize(30, 30)
+
+        # GitHub Link Label
+        github_label = QLabel('<a href="https://github.com/SpatialDigger/PCPro3">GitHub Repository</a>')
+        github_label.setOpenExternalLinks(True)
+        github_label.setAlignment(Qt.AlignCenter)
+
+        # Clickable icon - open GitHub on click
+        self.github_icon.mousePressEvent = self.open_github
+
+        github_layout.addWidget(self.github_icon)
+        github_layout.addWidget(github_label)
+        github_layout.setAlignment(Qt.AlignCenter)
+
+        # Add widgets to layout
+        layout.addWidget(about_label)
+        layout.addLayout(github_layout)
+
+        self.setLayout(layout)
+
+    def open_github(self, event):
+        QDesktopServices.openUrl(QUrl("https://github.com/SpatialDigger/PCPro3"))
 
 class ImportPointCloudDialog(QDialog):
     def __init__(self, parent=None):
@@ -97,7 +271,6 @@ class PoissonSurfaceDialog(QDialog):
         width = int(self.width_input.text()) if self.width_input.text() else 0
         scale = float(self.scale_input.text())
         return depth, width, scale
-
 
 class DistanceFilterDialog(QDialog):
     def __init__(self, parent=None):
