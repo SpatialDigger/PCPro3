@@ -36,7 +36,8 @@ from write_funcs import (
 from tools import (
     convexhull3d, filter_points_by_distance, sampling,
     merge_items, boundingbox3d, poisson_surface_reconstruction,
-    substitute_points, apply_spatial_transformation, dbscan_analysis
+    substitute_points, apply_spatial_transformation, dbscan_analysis,
+    filter_points_by_hull_footprint
 )
 # from normals import ball_pivoting_triangulation
 from normals import(
@@ -260,7 +261,7 @@ class MainWindow(QMainWindow):
         filter_points_by_hull_footprint_action = QAction("Hull Footprint", self)
         filter_points_by_hull_footprint_action.setToolTip("Filter points based on a hull footprint")
         filter_points_by_hull_footprint_action.setEnabled(True)
-        filter_points_by_hull_footprint_action.triggered.connect(self.filter_points_by_hull_footprint)
+        filter_points_by_hull_footprint_action.triggered.connect(lambda: filter_points_by_hull_footprint(self, self.selected_items()))
         filters_menu.addAction(filter_points_by_hull_footprint_action)
 
         between_distance_action = QAction("Between Distance", self)
@@ -679,106 +680,7 @@ class MainWindow(QMainWindow):
 
 
 
-    def filter_points_by_hull_footprint(self):
-        """Filters points from a selected Open3D point cloud that fall within the footprint of a selected line set (3D convex hull)."""
-        selected_items = self.selected_items()
 
-        # Separate selected point clouds and line sets
-        selected_point_clouds = []
-        selected_line_sets = []
-        for item in selected_items:
-            parent_name = item.parent().text(0) if item.parent() else None
-            child_name = item.text(0)
-            key = (parent_name, child_name)
-
-            if key in self.o3d_viewer.items:
-                o3d_item = self.o3d_viewer.items[key]
-                if isinstance(o3d_item, o3d.geometry.PointCloud):
-                    selected_point_clouds.append(o3d_item)
-                elif isinstance(o3d_item, o3d.geometry.LineSet):
-                    selected_line_sets.append(o3d_item)
-
-        if not selected_point_clouds or not selected_line_sets:
-            self.add_log_message("At least one point cloud and one line set must be selected.")
-            return
-
-        # Iterate through selected point clouds and line sets
-        for point_cloud in selected_point_clouds:
-            for line_set in selected_line_sets:
-                # Flatten the point cloud (remove z-coordinate)
-                points = np.asarray(point_cloud.points)
-                colors = np.asarray(point_cloud.colors)  # Get RGB values
-                points_2d = points[:, :2]
-
-                # Extract edges from the line set
-                lines = np.asarray(line_set.lines)
-                vertices = np.asarray(line_set.points)
-                vertices_2d = vertices[:, :2]
-
-                # Ensure the line set forms a closed loop (by appending the first vertex at the end if necessary)
-                if not np.array_equal(vertices_2d[0], vertices_2d[-1]):
-                    vertices_2d = np.vstack([vertices_2d, vertices_2d[0]])
-
-                # Create LineString objects for each edge (i.e., face of the convex hull in 2D)
-                edges = []
-                for i in range(len(vertices_2d) - 1):
-                    edge = LineString([vertices_2d[i], vertices_2d[i + 1]])
-                    edges.append(edge)
-
-                # Merge all line segments into a single polygon
-                merged_polygon = unary_union(edges)
-                if isinstance(merged_polygon, Polygon):
-                    polygon = merged_polygon
-                else:
-                    # If we get multiple separate polygons, merge them into one (using convex hull if needed)
-                    polygon = merged_polygon.convex_hull
-
-                # Filter points inside the polygon (keep the 3D structure)
-                filtered_points = []
-                filtered_colors = []
-                for i, point in enumerate(points_2d):
-                    if polygon.contains(Point(point)):
-                        # Append the original 3D point and corresponding color (RGB)
-                        filtered_points.append(points[i])
-                        filtered_colors.append(colors[i])
-
-                if not filtered_points:
-                    self.add_log_message("No points found inside the polygon.")
-                    continue
-
-                # Create a new point cloud from filtered points, restoring Z-coordinate
-                new_point_cloud = o3d.geometry.PointCloud()
-                new_point_cloud.points = o3d.utility.Vector3dVector(np.array(filtered_points))
-                new_point_cloud.colors = o3d.utility.Vector3dVector(np.array(filtered_colors))  # Add RGB values
-
-                # Generate the child name for the new point cloud
-                base_child_name = "pointcloud_in_3dhull"
-                child_name = base_child_name
-
-                # Check if a point cloud with this name already exists under the parent
-                parent_name = None
-                for item in selected_items:
-                    # if item.text(0) == point_cloud.name:
-                    if item.text(0) == child_name:
-                        parent_name = item.parent().text(0) if item.parent() else None
-                        break
-
-                # If parent_name is None (which should not happen in this case), fallback to the first point cloud's parent
-                if parent_name is None:
-                    parent_name = selected_items[0].parent().text(0) if selected_items[
-                        0].parent() else "Filtered Point Clouds"
-
-                # Ensure unique child name by checking if it exists under the parent
-                existing_children = self.data.get(parent_name, {}).keys()
-                counter = 1
-                while child_name in existing_children:
-                    child_name = f"{base_child_name}_{counter}"
-                    counter += 1
-
-                # Add the new point cloud to the tree and data using add_child_to_tree_and_data
-                self.add_child_to_tree_and_data(parent_name, child_name, new_point_cloud)
-
-                self.add_log_message(f"Added filtered point cloud '{child_name}' under '{parent_name}'.")
 
 
     # Visualisation

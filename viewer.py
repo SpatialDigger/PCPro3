@@ -1,5 +1,6 @@
 import open3d as o3d
 from pprint import pprint
+
 class Open3DViewer:
     def __init__(self, logger=None, data=None):
         self.vis = o3d.visualization.Visualizer()
@@ -132,11 +133,6 @@ class Open3DViewer:
         self.update_viewer()
         self.log_message("Viewer state updated to reflect current data and visibility.")
 
-    def close(self):
-        """Close the Open3D viewer window."""
-        self.vis.destroy_window()
-
-
     def update_point_cloud_color(self, parent_name, new_color_rgb):
         """Update the color of a point cloud in the viewer."""
         key = (parent_name, "Pointcloud")
@@ -163,3 +159,7 @@ class Open3DViewer:
         self.update_viewer()
 
         self.log_message(f"Updated color of '{parent_name}' to {new_color_rgb}.")
+
+    def close(self):
+        """Close the Open3D viewer window."""
+        self.vis.destroy_window()
