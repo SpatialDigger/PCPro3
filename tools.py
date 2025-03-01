@@ -1,9 +1,9 @@
 import open3d as o3d
 import numpy as np
 import random
-
+import time
 from dialogs_pyqt5 import (
-    DistanceFilterDialog, SampleDialog, PoissonSurfaceDialog,
+    DistanceFilterDialog, SampleDialog, PoissonSurfaceDialog, TransformationDialog
                      )
 
 import scipy.spatial
@@ -470,6 +470,92 @@ def merge_items(self, selected_items):
 
 ####
 # tools moving over to tools from main
+
+def apply_spatial_transformation(self, selected_items):
+    """Applies spatial transformation to selected point clouds."""
+    # selected_items = self.selected_items()
+
+    # Collect selected point clouds
+    selected_point_clouds = []
+    for item in selected_items:
+        parent_name = item.parent().text(0) if item.parent() else None
+        child_name = item.text(0)
+        key = (parent_name, child_name)
+
+        if key in self.o3d_viewer.items:
+            o3d_item = self.o3d_viewer.items[key]
+            if isinstance(o3d_item, o3d.geometry.PointCloud):
+                selected_point_clouds.append((key, o3d_item))
+
+    if not selected_point_clouds:
+        self.add_log_message("No point clouds selected for transformation.")
+        return
+
+    # Show the transformation dialog
+    dialog = TransformationDialog(self)
+    if dialog.exec() == QDialog.DialogCode.Accepted:
+        translation, rotation, mirroring = dialog.get_transformation_parameters()
+
+        for (key, point_cloud) in selected_point_clouds:
+            try:
+                # Validate point cloud
+                if not hasattr(point_cloud, 'points') or len(point_cloud.points) == 0:
+                    self.add_log_message(f"Point cloud '{key[1]}' is empty or invalid. Skipping transformation.")
+                    continue
+
+                self.add_log_message(f"Attempting to translate point cloud with translation: {translation}")
+                if not isinstance(translation, (list, tuple)) or len(translation) != 3:
+                    self.add_log_message(f"Invalid translation vector: {translation}. Skipping translation.")
+                    continue
+
+                # Apply transformations manually
+                if any(value != 0 for value in translation):
+                    self.add_log_message(f"Applying manual translation {translation} to point cloud '{key[1]}'.")
+                    try:
+                        # Convert points to a NumPy array, apply translation, and assign back
+                        points = np.asarray(point_cloud.points)  # Convert to NumPy array
+                        points += np.array(translation)  # Apply translation
+                        point_cloud.points = o3d.utility.Vector3dVector(points)  # Assign back
+                    except Exception as e:
+                        self.add_log_message(f"Failed to apply manual translation to '{key[1]}': {e}")
+                        continue
+
+                if any(rotation):
+                    self.add_log_message(f"Applying rotation {rotation} to point cloud '{key[1]}'.")
+                    rotation_radians = [np.radians(angle) for angle in rotation]
+                    rotation_matrix = o3d.geometry.get_rotation_matrix_from_xyz(rotation_radians)
+                    point_cloud.rotate(rotation_matrix, center=point_cloud.get_center())
+
+                if any(mirroring):
+                    self.add_log_message(f"Applying mirroring {mirroring} to point cloud '{key[1]}'.")
+                    mirror_matrix = np.eye(4)
+                    mirror_matrix[0, 0] = -1 if mirroring[0] else 1
+                    mirror_matrix[1, 1] = -1 if mirroring[1] else 1
+                    mirror_matrix[2, 2] = -1 if mirroring[2] else 1
+                    point_cloud.transform(mirror_matrix)
+
+                # Remove and re-add the point cloud to refresh the viewer
+                parent_name, child_name = key
+                self.add_log_message(f"Removing point cloud '{child_name}' from viewer.")
+                try:
+                    self.o3d_viewer.remove_item(parent_name, child_name)
+                    time.sleep(0.1)  # Add delay to allow viewer to process removal
+                    self.add_log_message(f"Re-adding point cloud '{child_name}' to viewer.")
+                    self.o3d_viewer.add_item(point_cloud, parent_name, child_name)
+                    time.sleep(0.1)  # Add delay to allow viewer to process re-addition
+                except Exception as e:
+                    self.add_log_message(f"Failed to update viewer for '{child_name}': {e}")
+                    continue
+
+                # Add log message
+                self.add_log_message(f"Transformed point cloud '{key[1]}' under '{key[0]}'.")
+
+            except Exception as e:
+                self.add_log_message(f"Failed to transform point cloud '{key[1]}': {e}")
+
+        # Refresh the Open3D viewer
+        self.o3d_viewer.update_viewer()
+
 
 
 ######

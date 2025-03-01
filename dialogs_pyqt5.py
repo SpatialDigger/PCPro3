@@ -691,6 +691,34 @@ class TransformationDialog(QDialog):
         layout.addLayout(button_layout)
 
 
+    def get_transformation_parameters(self):
+        """Retrieves user input for transformation parameters."""
+        try:
+            # Convert input to floats
+            translation = [
+                float(self.tx_input.text()),
+                float(self.ty_input.text()),
+                float(self.tz_input.text()),
+            ]
+
+            rotation = [
+                float(self.rx_input.text()),
+                float(self.ry_input.text()),
+                float(self.rz_input.text()),
+            ]
+
+            mirroring = [
+                self.mirror_x.isChecked(),
+                self.mirror_y.isChecked(),
+                self.mirror_z.isChecked(),
+            ]
+
+            return translation, rotation, mirroring
+        except ValueError:
+            QMessageBox.critical(self, "Input Error", "Please enter valid numerical values for translation and rotation.")
+            return [0, 0, 0], [0, 0, 0], [False, False, False]
+
+
 class PreferencesDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
