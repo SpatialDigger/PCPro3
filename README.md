@@ -56,3 +56,70 @@ This project is licensed under the GNU GENERAL PUBLIC LICENSE - see the [LICENSE
 
 ## Contact
 For questions or suggestions, reach out at garynobles20@gmail.com or open an issue on GitHub.
+
+---
+# Changelog
+
+---
+
+## Version 0.1.2 
+**Release Date:** [In development]
+
+### New Features:
+- Added option to customize point cloud colors and revert to the default colors
+- Included a link to GitHub documentation under the Help menu
+- Added Example 1 to the documentation
+- Introduced "About" and "Keyboard Shortcuts" options in the menu
+- Added the ability to change the pointcloud colours
+- Added the ability to revert colours back to their original state
+
+### Bug Fixes:
+- Resolved issue where point cloud colours weren't saving on export
+- Mesh can now display properties
+
+### Performance Improvements:
+- None
+
+### Compatibility Updates:
+- None
+
+### Known Issues:
+- #1 Convexhull3D filter assigning filtered pointcloud to the wrong pointcloud
+- #20 Crashes when getting properties for a mesh
+- Mesh properties takes a while to load
+- Mesh cannot change colour
+
+### Upgrade Notes:
+- None
+### Coming Soon:
+- Mesh Volume calculation
+- Mesh properties fix
+
+### Deprecation Notices:
+- None
+
+### Special Thanks:
+- Catherine Scott for testing and raising enhancement requests
+- Christopher Roosevelt for raising enhancement requests
+
+---
+
+
+## Version 0.1.1
+Release Date: 25th February 2025 [Current]
+### New Features:
+- Added ability to compute normals
+- Added option to invert normals
+- Added functionality to export mesh as PLY
+- added the ability to perform surface reconstruction
+
+### Compatibility Updates:
+- Updated mesh export to support latest version of PLY format
+
+---
+
+## Version 0.1.0
+Release Date: 19th February 2025
+### New Features:
+- PCPro launched
+- Initial release with core features

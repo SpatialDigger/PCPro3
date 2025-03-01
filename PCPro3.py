@@ -7,7 +7,6 @@ import laspy
 import open3d as o3d
 import webbrowser
 
-
 from pprint import pformat
 from sklearn.cluster import DBSCAN
 from shapely.geometry import Point, Polygon, MultiLineString, LineString
@@ -26,7 +25,11 @@ from dialogs_pyqt5 import (
 )
 from PyQt5.QtCore import  QUrl
 
-from io_pcpro import (
+from read_funcs import (
+    add_mesh, add_pointcloud
+)
+
+from write_funcs import (
     export_item
 )
 
@@ -42,18 +45,10 @@ from normals import(
 # Suppress deprecation warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-
-
-import sys
 from PyQt5.QtWidgets import QApplication, QDialog, QLabel, QVBoxLayout, QHBoxLayout
 
 from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtGui import QDesktopServices
-
-
-
-
-
 
 
 class MainWindow(QMainWindow):
@@ -101,54 +96,6 @@ class MainWindow(QMainWindow):
 
     #####
     # Menus
-
-    def show_right_click_menu(self, position: QPoint):
-        """Display a context menu at the right-click position with options tailored to the selected item."""
-        item = self.tree.itemAt(position)
-
-        if item:
-            menu = QMenu(self)
-            parent_item = item.parent()
-
-            # Common Option: Remove Item
-            action_remove = QAction("Remove", self)
-            action_remove.setToolTip("Remove this item from the workspace")
-            action_remove.triggered.connect(lambda: self.delete_item(item, is_child=bool(parent_item)))
-            menu.addAction(action_remove)
-
-            # Show Properties
-            properties_action = QAction("Properties", self)
-            properties_action.setToolTip("Show properties of this item")
-            properties_action.triggered.connect(lambda: self.show_properties(item))
-            menu.addAction(properties_action)
-
-            # Color Management
-            change_color_action = QAction("Change Color", self)
-            change_color_action.setToolTip("Change the color of this point cloud")
-            change_color_action.triggered.connect(lambda: self.change_point_cloud_color(item))
-            menu.addAction(change_color_action)
-
-            # Add "Revert to Original Color" only if the color has been changed (stored in self.original_colors)
-            # if item.text(0) in self.original_colors:
-            revert_color_action = QAction("Revert to Original Color", self)
-            revert_color_action.setToolTip("Revert the point cloud to its original color")
-            revert_color_action.triggered.connect(lambda: self.revert_point_cloud_color(item))
-            menu.addAction(revert_color_action)
-
-            if parent_item:
-                action_export = QAction("Export", self)
-                action_export.setToolTip("Export this item to a file")
-                action_export.triggered.connect(lambda: export_item(self, self.selected_items()))  # Passing `self` and the selected item
-                menu.addAction(action_export)
-
-            else:  # Parent item-specific options
-                action_rename = QAction("Rename", self)
-                action_rename.setToolTip("Rename this item")
-                action_rename.triggered.connect(lambda: self.start_rename(item))
-                menu.addAction(action_rename)
-
-            menu.exec(self.tree.viewport().mapToGlobal(position))
-
     def create_menu_bar(self):
         menu_bar = self.menuBar()
 
@@ -420,44 +367,108 @@ class MainWindow(QMainWindow):
         debug_action.triggered.connect(lambda: self.debug())
         debug_menu.addAction(debug_action)
 
-    #####
-    # def show_about_dialog(self):
-    #     QMessageBox.about(self, "About", "This is a sample PyQt5 application.\nVersion: 1.0\nAuthor: Your Name")
+    def show_right_click_menu(self, position: QPoint):
+        """Display a context menu at the right-click position with options tailored to the selected item."""
+        item = self.tree.itemAt(position)
 
-    def show_about_dialog(self):
+        if item:
+            menu = QMenu(self)
+            parent_item = item.parent()
+
+            # Common Option: Remove Item
+            action_remove = QAction("Remove", self)
+            action_remove.setToolTip("Remove this item from the workspace")
+            action_remove.triggered.connect(lambda: self.delete_item(item, is_child=bool(parent_item)))
+            menu.addAction(action_remove)
+
+            # Show Properties
+            properties_action = QAction("Properties", self)
+            properties_action.setToolTip("Show properties of this item")
+            properties_action.triggered.connect(lambda: self.show_properties(item))
+            menu.addAction(properties_action)
+
+            # Color Management
+            change_color_action = QAction("Change Color", self)
+            change_color_action.setToolTip("Change the color of this point cloud")
+            change_color_action.triggered.connect(lambda: self.change_point_cloud_color(item))
+            menu.addAction(change_color_action)
+
+            # Add "Revert to Original Color" only if the color has been changed (stored in self.original_colors)
+            # if item.text(0) in self.original_colors:
+            revert_color_action = QAction("Revert to Original Color", self)
+            revert_color_action.setToolTip("Revert the point cloud to its original color")
+            revert_color_action.triggered.connect(lambda: self.revert_point_cloud_color(item))
+            menu.addAction(revert_color_action)
+
+            if parent_item:
+                action_export = QAction("Export", self)
+                action_export.setToolTip("Export this item to a file")
+                action_export.triggered.connect(lambda: export_item(self, self.selected_items()))  # Passing `self` and the selected item
+                menu.addAction(action_export)
+
+            else:  # Parent item-specific options
+                action_rename = QAction("Rename", self)
+                action_rename.setToolTip("Rename this item")
+                action_rename.triggered.connect(lambda: self.start_rename(item))
+                menu.addAction(action_rename)
+
+            menu.exec(self.tree.viewport().mapToGlobal(position))
+
+    def show_properties(self, item):
+        """
+        Display a properties dialog for the given item, showing either its specific data
+        or a list of its children if the item is a parent.
+        """
+        item_text = item.text(0)  # Get the text of the right-clicked item
+        parent_item = item.parent()
+
+        if parent_item:
+            # If the item is a child, get the parent and child data
+            parent_name = parent_item.text(0)
+            child_name = item_text
+
+            if parent_name in self.data and child_name in self.data[parent_name]:
+                data = {
+                    'item': self.data[parent_name][child_name],  # Show child data
+                    'filename': self.data[parent_name]['file_name'],
+                    'filepath': self.data[parent_name]['file_path'],
+                    'transform_settings': self.translation_values,
+                }
+            else:
+                self.add_log_message(f"No data found for child item '{child_name}' under parent '{parent_name}'.")
+                return
+        else:
+            # If the item is a parent, get its data
+            parent_name = item_text
+
+            if parent_name in self.data:
+                data = self.data[parent_name]  # Show parent data
+            else:
+                self.add_log_message(f"No data found for parent item '{parent_name}'.")
+                return
+
+        # Show properties dialog for the selected data (either parent or child)
+        properties_dialog = PropertiesDialog(data, self)
+        properties_dialog.exec()
+
+    def debug(self):
+        # Assuming self.data is a dictionary
+        self.add_log_message(f"Debug: Current data structure:\n{pformat(self.data)}")
+
+    #####
+    @staticmethod
+    def show_about_dialog():
         dialog = AboutDialog()
         dialog.exec_()
 
-    def show_keyboard_dialog(self):
+    @staticmethod
+    def open_user_guide():
+        QDesktopServices.openUrl(QUrl("https://github.com/SpatialDigger/PCPro3/tree/main/docs"))
+
+    @staticmethod
+    def show_keyboard_dialog():
         dialog = KeyboardShortcutsDialog()
         dialog.exec_()
-
-
-
-    def add_pointcloud(self, file_path, transform_settings=None):
-        """Handles importing a point cloud and adding it to the tree and data dictionary."""
-        try:
-            # Import the point cloud data
-            data = self.import_pointcloud(file_path, transform_settings)
-            file_name = data["file_name"]
-
-            # Add the point cloud as a child under the file name
-            self.add_child_to_tree_and_data(
-                parent_name=file_name,
-                child_name="Pointcloud",
-                data=data["Pointcloud"]
-            )
-
-            # Store additional metadata in the parent data dictionary
-            self.data[file_name].update({
-                "transform_settings": self.translation_values,
-                "file_path": file_path,
-                "file_name": file_name,
-            })
-
-            self.add_log_message(f"Point cloud successfully added for file '{file_name}'.")
-        except Exception as e:
-            self.add_log_message(f"Failed to add point cloud: {str(e)}")
 
     def selected_items(self):
         """
@@ -638,7 +649,7 @@ class MainWindow(QMainWindow):
             )
             if file_paths:
                 for file_path in file_paths:
-                    self.add_pointcloud(file_path)
+                    add_pointcloud(self, file_path, transform_settings={})
         elif dialog_type == "Mesh":
             file_paths, _ = QFileDialog.getOpenFileNames(
                 self, "Select Mesh Files", "",
@@ -646,7 +657,7 @@ class MainWindow(QMainWindow):
             )
             if file_paths:
                 for file_path in file_paths:
-                    self.add_mesh(file_path, transform_settings={})
+                    add_mesh(self, file_path, transform_settings={})
 
     def on_item_changed(self, item):
         is_checked = item.checkState(0) == Qt.CheckState.Checked
@@ -670,160 +681,6 @@ class MainWindow(QMainWindow):
         finally:
             self.tree.blockSignals(False)
 
-    def add_mesh(self, file_path, transform_settings=None):
-        """Handles importing a mesh and adding it to the tree and data dictionary."""
-        try:
-            # Import the mesh data
-            data = self.import_mesh(file_path, transform_settings)
-            file_name = data["file_name"]
-
-            # Add the mesh as a child under the file name
-            self.add_child_to_tree_and_data(
-                parent_name=file_name,
-                child_name="Mesh",
-                data=data["Mesh"]
-            )
-
-            # Store additional metadata in the parent data dictionary
-            self.data[file_name].update({
-                "transform_settings": self.translation_values,
-                "file_path": file_path,
-                "file_name": file_name,
-            })
-
-            self.add_log_message(f"Mesh successfully added for file '{file_name}'.")
-        except Exception as e:
-            self.add_log_message(f"Failed to add mesh: {str(e)}")
-
-    def import_mesh(self, file_path, transform_settings):
-        """Load and process a 3D mesh."""
-        self.add_log_message(f"Importing mesh: {file_path}...")
-
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(f"File not found: {file_path}")
-
-        mesh = None
-
-        # Check file format and load accordingly
-        if file_path.endswith(".ply"):
-            mesh = o3d.io.read_triangle_mesh(file_path)
-        elif file_path.endswith(".obj"):
-            mesh = o3d.io.read_triangle_mesh(file_path, enable_post_processing=True)
-
-            # Automatically load textures if they exist
-            material_file = file_path.replace('.obj', '.mtl')
-            if os.path.exists(material_file):
-                self.add_log_message("Associated material file found. Textures should load automatically.")
-        else:
-            # Attempt to load other popular formats
-            mesh = o3d.io.read_triangle_mesh(file_path)
-
-        # Verify mesh
-        if not mesh or not mesh.has_vertices() or not mesh.has_triangles():
-            raise ValueError("Imported mesh is empty or invalid.")
-
-        # Enable vertex colors if available
-        if mesh.has_vertex_colors():
-            self.add_log_message("Mesh has vertex colors. They will be displayed.")
-        else:
-            self.add_log_message("Mesh does not have vertex colors.")
-
-        # Enable textures if available
-        if mesh.has_textures():
-            self.add_log_message("Mesh has textures. They will be displayed.")
-        else:
-            self.add_log_message("Mesh does not have textures.")
-
-        # Apply transformations if needed
-        if transform_settings:
-            self.apply_transformations(mesh, transform_settings)
-
-        file_name = os.path.basename(file_path)
-        return {
-            "Mesh": mesh,
-            "transform_settings": self.translation_values,
-            "file_path": file_path,
-            "file_name": file_name,
-        }
-
-    def import_pointcloud(self, file_path, transform_settings):
-        """Load and process a point cloud."""
-        self.add_log_message(f"Importing point cloud: {file_path}...")
-
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(f"File not found: {file_path}")
-
-        if file_path.endswith(".las"):
-            pointcloud = self.load_las_to_open3d_chunked(file_path, transform_settings)
-        else:
-            try:
-                pointcloud = o3d.io.read_point_cloud(file_path)
-                if pointcloud.is_empty():
-                    raise ValueError("Point cloud file is empty or not in a compatible format.")
-            except Exception as e:
-                raise ValueError(f"Error loading point cloud: {e}")
-
-        file_name = os.path.basename(file_path)
-        return {
-            "Pointcloud": pointcloud,
-            "transform_settings": self.translation_values,
-            "file_path": file_path,
-            "file_name": file_name,
-        }
-
-    def load_las_to_open3d_chunked(self, file_path, transform_settings, max_points=1_000_000):
-        """Load .las file and convert to Open3D point cloud in chunks."""
-
-        with laspy.open(file_path) as las_file:
-            header = las_file.header
-            points_count = header.point_count
-
-            points = []
-            colors = []
-
-            pointcloud = las_file.read()
-
-            sample_x = pointcloud.x[0] if len(pointcloud.x) > 0 else 0
-            sample_y = pointcloud.y[0] if len(pointcloud.y) > 0 else 0
-
-            translate_x = (int(sample_x) // 1000) * 1000
-            translate_y = (int(sample_y) // 1000) * 1000
-
-            if hasattr(self, 'translation_values'):
-                self.translation_values.update({"x": translate_x, "y": translate_y})
-            else:
-                self.translation_values = {"x": translate_x, "y": translate_y}
-
-            self.add_log_message(
-                f"Automatically determined translation values: translate_x={translate_x}, translate_y={translate_y}")
-
-            for start in range(0, points_count, max_points):
-                end = min(start + max_points, points_count)
-                chunk = pointcloud[start:end]
-
-                x, y, z = np.array(chunk.x), np.array(chunk.y), np.array(chunk.z)
-
-                x = x - translate_x
-                y = y - translate_y
-
-                points.append(np.column_stack((x, y, z)))
-
-                if 'red' in chunk.point_format.dimension_names:
-                    r = chunk.red / 65535.0
-                    g = chunk.green / 65535.0
-                    b = chunk.blue / 65535.0
-                    colors.append(np.column_stack((r, g, b)))
-                else:
-                    colors.append(np.zeros((len(x), 3)))
-
-            points = np.vstack(points)
-            colors = np.vstack(colors)
-
-        pcd = o3d.geometry.PointCloud()
-        pcd.points = o3d.utility.Vector3dVector(points)
-        pcd.colors = o3d.utility.Vector3dVector(colors)
-        return pcd
-
     def add_log_message(self, message):
         self.log_window.add_message(message)
 
@@ -832,53 +689,6 @@ class MainWindow(QMainWindow):
         self.o3d_viewer.close()
         super().closeEvent(event)
 
-
-    #####
-    # Menu items
-    @staticmethod
-    def open_user_guide():
-        QDesktopServices.openUrl(QUrl("https://github.com/SpatialDigger/PCPro3/tree/main/docs"))
-
-    def show_properties(self, item):
-        """
-        Display a properties dialog for the given item, showing either its specific data
-        or a list of its children if the item is a parent.
-        """
-        item_text = item.text(0)  # Get the text of the right-clicked item
-        parent_item = item.parent()
-
-        if parent_item:
-            # If the item is a child, get the parent and child data
-            parent_name = parent_item.text(0)
-            child_name = item_text
-
-            if parent_name in self.data and child_name in self.data[parent_name]:
-                data = {
-                    'item': self.data[parent_name][child_name],  # Show child data
-                    'filename': self.data[parent_name]['file_name'],
-                    'filepath': self.data[parent_name]['file_path'],
-                    'transform_settings': self.translation_values,
-                }
-            else:
-                self.add_log_message(f"No data found for child item '{child_name}' under parent '{parent_name}'.")
-                return
-        else:
-            # If the item is a parent, get its data
-            parent_name = item_text
-
-            if parent_name in self.data:
-                data = self.data[parent_name]  # Show parent data
-            else:
-                self.add_log_message(f"No data found for parent item '{parent_name}'.")
-                return
-
-        # Show properties dialog for the selected data (either parent or child)
-        properties_dialog = PropertiesDialog(data, self)
-        properties_dialog.exec()
-
-    def debug(self):
-        # Assuming self.data is a dictionary
-        self.add_log_message(f"Debug: Current data structure:\n{pformat(self.data)}")
 
 
 
@@ -972,18 +782,7 @@ class MainWindow(QMainWindow):
             # Refresh the Open3D viewer
             self.o3d_viewer.update_viewer()
 
-    def apply_transformations(self, mesh, transform_settings):
-        """Apply transformations to the mesh based on settings."""
-        self.add_log_message("Applying transformations...")
-        if "scale" in transform_settings:
-            scale_factor = transform_settings["scale"]
-            mesh.scale(scale_factor, center=mesh.get_center())
-        if "rotation" in transform_settings:
-            rotation_matrix = transform_settings["rotation"]  # Should be a 3x3 matrix
-            mesh.rotate(rotation_matrix, center=mesh.get_center())
-        if "translation" in transform_settings:
-            translation_vector = transform_settings["translation"]
-            mesh.translate(translation_vector)
+
 
     def open_dbscan_dialog(self):
 
