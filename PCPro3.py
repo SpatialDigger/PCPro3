@@ -26,7 +26,7 @@ from dialogs_pyqt5 import (
 from PyQt5.QtCore import  QUrl
 
 from read_funcs import (
-    add_mesh, add_pointcloud
+    open_file_dialog
 )
 
 from write_funcs import (
@@ -54,7 +54,7 @@ from PyQt5.QtGui import QDesktopServices
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Pointcloud Processor")
+        self.setWindowTitle("Pointcloud Processor 0.1.2")
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
 
@@ -62,7 +62,7 @@ class MainWindow(QMainWindow):
         self.central_widget.setLayout(layout)
 
         self.tree = QTreeWidget()
-        self.tree.setHeaderLabels(["Dataset"])
+        self.tree.setHeaderLabels(["Datasets"])
 
         # Set multi-selection mode
         self.tree.setSelectionMode(QAbstractItemView.MultiSelection)
@@ -105,13 +105,13 @@ class MainWindow(QMainWindow):
         add_pointcloud_action = QAction("Add Pointcloud", self)
         add_pointcloud_action.setToolTip("Load a pointcloud from a file")
         add_pointcloud_action.setEnabled(True)
-        add_pointcloud_action.triggered.connect(lambda: self.open_file_dialog("Pointcloud"))
+        add_pointcloud_action.triggered.connect(lambda: open_file_dialog(self, "Pointcloud"))
         file_menu.addAction(add_pointcloud_action)
 
         add_mesh_action = QAction("Add Mesh", self)
         add_mesh_action.setToolTip("Feature not yet implemented")
         add_mesh_action.setEnabled(True)
-        add_mesh_action.triggered.connect(lambda: self.open_file_dialog("Mesh"))
+        add_mesh_action.triggered.connect(lambda: open_file_dialog(self, "Mesh"))
         file_menu.addAction(add_mesh_action)
 
         add_line_action = QAction("Add Line", self)
@@ -640,24 +640,24 @@ class MainWindow(QMainWindow):
             self.remove_from_tree_and_data(parent_name)
             self.add_log_message(f"Deleted parent '{parent_name}' and all its children.")
 
-    def open_file_dialog(self, dialog_type):
-        """Open file dialog to select files based on the type of addition (pointcloud or mesh)."""
-        if dialog_type == "Pointcloud":
-            file_paths, _ = QFileDialog.getOpenFileNames(
-                self, "Select Pointcloud Files", "",
-                "Pointclouds (*.pcd *.las *.ply *.xyz *.xyzn *.xyzrgb *.pts)"
-            )
-            if file_paths:
-                for file_path in file_paths:
-                    add_pointcloud(self, file_path, transform_settings={})
-        elif dialog_type == "Mesh":
-            file_paths, _ = QFileDialog.getOpenFileNames(
-                self, "Select Mesh Files", "",
-                "Meshes (*.ply *.obj *.stl *.glb *.fbx *.3mf *.off)"
-            )
-            if file_paths:
-                for file_path in file_paths:
-                    add_mesh(self, file_path, transform_settings={})
+    # def open_file_dialog(self, dialog_type):
+    #     """Open file dialog to select files based on the type of addition (pointcloud or mesh)."""
+    #     if dialog_type == "Pointcloud":
+    #         file_paths, _ = QFileDialog.getOpenFileNames(
+    #             self, "Select Pointcloud Files", "",
+    #             "Pointclouds (*.pcd *.las *.ply *.xyz *.xyzn *.xyzrgb *.pts)"
+    #         )
+    #         if file_paths:
+    #             for file_path in file_paths:
+    #                 add_pointcloud(self, file_path, transform_settings={})
+    #     elif dialog_type == "Mesh":
+    #         file_paths, _ = QFileDialog.getOpenFileNames(
+    #             self, "Select Mesh Files", "",
+    #             "Meshes (*.ply *.obj *.stl *.glb *.fbx *.3mf *.off)"
+    #         )
+    #         if file_paths:
+    #             for file_path in file_paths:
+    #                 add_mesh(self, file_path, transform_settings={})
 
     def on_item_changed(self, item):
         is_checked = item.checkState(0) == Qt.CheckState.Checked

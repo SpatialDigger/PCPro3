@@ -6,7 +6,7 @@ class Open3DViewer:
         # self.vis = o3d.visualization.VisualizerWithEditing()
         self.window_width = 800
         self.window_height = 600
-        self.vis.create_window(width=self.window_width, height=self.window_height)
+        self.vis.create_window(window_name="3D View", width=self.window_width, height=self.window_height)
         self.view_control = self.vis.get_view_control()
         self.items = {}
         self.logger = logger

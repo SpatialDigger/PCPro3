@@ -3,6 +3,8 @@ import numpy as np
 import open3d as o3d
 import laspy
 
+from PyQt5.QtWidgets import QFileDialog
+
 def import_mesh(parent, file_path, transform_settings):
     transform_settings={}
     """Load and process a 3D mesh."""
@@ -208,3 +210,23 @@ def add_log_message(parent, message):
         parent.add_log_message(message)  # Assuming `add_log_message` is a method in your parent class (main window)
     else:
         print(message)  # Fallback to print if no parent is available
+
+
+def open_file_dialog(parent, dialog_type):
+    """Open file dialog to select files based on the type of addition (pointcloud or mesh)."""
+    if dialog_type == "Pointcloud":
+        file_paths, _ = QFileDialog.getOpenFileNames(
+            parent, "Select Pointcloud Files", "",
+            "Pointclouds (*.pcd *.las *.ply *.xyz *.xyzn *.xyzrgb *.pts)"
+        )
+        if file_paths:
+            for file_path in file_paths:
+                add_pointcloud(parent, file_path, transform_settings={})
+    elif dialog_type == "Mesh":
+        file_paths, _ = QFileDialog.getOpenFileNames(
+            parent, "Select Mesh Files", "",
+            "Meshes (*.ply *.obj *.stl *.glb *.fbx *.3mf *.off)"
+        )
+        if file_paths:
+            for file_path in file_paths:
+                add_mesh(parent, file_path, transform_settings={})
