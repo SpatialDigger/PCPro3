@@ -75,7 +75,7 @@ class MainWindow(QMainWindow):
 
         # Connect context menu policy for right-click
         self.tree.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.tree.customContextMenuRequested.connect(self.show_context_menu)
+        self.tree.customContextMenuRequested.connect(self.show_right_click_menu)
 
         self.coordinate_frame_visible = False  # Track visibility
 
@@ -83,7 +83,10 @@ class MainWindow(QMainWindow):
         self.metadata = {}
         self.original_colors = {}
 
-    def show_context_menu(self, position: QPoint):
+    #####
+    # Menus
+
+    def show_right_click_menu(self, position: QPoint):
         """Display a context menu at the right-click position with options tailored to the selected item."""
         item = self.tree.itemAt(position)
 
@@ -129,518 +132,6 @@ class MainWindow(QMainWindow):
                 menu.addAction(action_rename)
 
             menu.exec(self.tree.viewport().mapToGlobal(position))
-
-
-    def change_point_cloud_color(self, item):
-        """Change the color of a point cloud."""
-        parent_item = item.parent()
-        if not parent_item:
-            self.add_log_message("No parent item found.")
-            return
-
-        parent_name = parent_item.text(0)
-        child_name = item.text(0)
-
-        color = QColorDialog.getColor()
-        if not color.isValid():
-            self.add_log_message("Invalid color selected.")
-            return
-
-        # Convert QColor to Open3D format (normalized)
-        red, green, blue = color.red() / 255.0, color.green() / 255.0, color.blue() / 255.0
-        new_color = [red, green, blue]
-
-        # Retrieve the point cloud
-        key = (parent_name, child_name)
-        if key in self.o3d_viewer.items:
-            point_cloud = self.o3d_viewer.items[key]
-
-            num_points = len(point_cloud.points)
-            if num_points == 0:
-                self.add_log_message(f"Point cloud '{child_name}' under '{parent_name}' has no points.")
-                return
-
-            # **Store the original colors using (parent_name, child_name)**
-            if key not in self.original_colors:
-                original_colors = np.asarray(point_cloud.colors)  # Convert to NumPy array
-                if original_colors.size > 0:
-                    self.original_colors[key] = original_colors.copy()  # Store a copy
-                else:
-                    self.original_colors[key] = np.ones((num_points, 3))  # Default to white
-
-            # Apply new color to all points
-            point_cloud.colors = o3d.utility.Vector3dVector(np.tile(new_color, (num_points, 1)))
-
-            # Remove and re-add the geometry to force an update
-            self.o3d_viewer.vis.remove_geometry(point_cloud)
-            self.o3d_viewer.vis.add_geometry(point_cloud)
-
-            # Refresh viewer
-            self.o3d_viewer.update_viewer()
-            self.add_log_message(f"Color of '{child_name}' under '{parent_name}' changed to {new_color}.")
-        else:
-            self.add_log_message(f"Point cloud for '{child_name}' under '{parent_name}' not found.")
-
-    def revert_point_cloud_color(self, item):
-        """Revert the point cloud to its original color."""
-        self.add_log_message("Revert color action triggered.")
-
-        if not item:
-            self.add_log_message("No item selected to revert color.")
-            return
-
-        child_name = item.text(0)
-        parent_item = item.parent()
-        if not parent_item:
-            self.add_log_message(f"'{child_name}' does not have a parent item.")
-            return
-
-        parent_name = parent_item.text(0)
-        key = (parent_name, child_name)  # Ensure we use the correct key
-
-        # Check if original colors exist
-        if key not in self.original_colors:
-            self.add_log_message(f"No original color found for '{child_name}' under '{parent_name}'.")
-            return
-
-        # Retrieve the point cloud
-        if key in self.o3d_viewer.items:
-            point_cloud = self.o3d_viewer.items[key]
-
-            # Restore original per-point colors
-            original_colors = self.original_colors[key]  # Use the correct key
-            point_cloud.colors = o3d.utility.Vector3dVector(original_colors)
-
-            # Remove and re-add the geometry to update Open3D viewer
-            self.o3d_viewer.vis.remove_geometry(point_cloud)
-            self.o3d_viewer.vis.add_geometry(point_cloud)
-
-            # Refresh viewer
-            self.o3d_viewer.update_viewer()
-            self.add_log_message(f"Color of '{child_name}' under '{parent_name}' reverted to original.")
-        else:
-            self.add_log_message(f"Point cloud for '{child_name}' under '{parent_name}' not found.")
-
-    def add_pointcloud(self, file_path, transform_settings=None):
-        """Handles importing a point cloud and adding it to the tree and data dictionary."""
-        try:
-            # Import the point cloud data
-            data = self.import_pointcloud(file_path, transform_settings)
-            file_name = data["file_name"]
-
-            # Add the point cloud as a child under the file name
-            self.add_child_to_tree_and_data(
-                parent_name=file_name,
-                child_name="Pointcloud",
-                data=data["Pointcloud"]
-            )
-
-            # Store additional metadata in the parent data dictionary
-            self.data[file_name].update({
-                "transform_settings": self.translation_values,
-                "file_path": file_path,
-                "file_name": file_name,
-            })
-
-            self.add_log_message(f"Point cloud successfully added for file '{file_name}'.")
-        except Exception as e:
-            self.add_log_message(f"Failed to add point cloud: {str(e)}")
-
-    def create_axis(self, length=1.0):
-        """
-        Create an RGB-colored XYZ axis visualization in Open3D.
-        Args:
-            length (float): Length of the axes.
-        Returns:
-            o3d.geometry.LineSet: Axis representation as a LineSet.
-        """
-        import numpy as np
-
-        # Points for the origin and the tips of the axes
-        points = np.array([
-            [0, 0, 0],  # Origin
-            [length, 0, 0],  # X-axis tip
-            [0, length, 0],  # Y-axis tip
-            [0, 0, length],  # Z-axis tip
-        ], dtype=np.float64)
-
-        # Lines connecting the origin to the tips of the axes
-        lines = np.array([
-            [0, 1],  # Line for X-axis
-            [0, 2],  # Line for Y-axis
-            [0, 3],  # Line for Z-axis
-        ], dtype=np.int32)
-
-        # RGB colors for the lines (one per line)
-        colors = np.array([
-            [1, 0, 0],  # Red for X-axis
-            [0, 1, 0],  # Green for Y-axis
-            [0, 0, 1],  # Blue for Z-axis
-        ], dtype=np.float64)
-
-        # Create the LineSet object
-        axis = o3d.geometry.LineSet()
-        axis.points = o3d.utility.Vector3dVector(points)
-        axis.lines = o3d.utility.Vector2iVector(lines)
-        axis.colors = o3d.utility.Vector3dVector(colors)
-
-        return axis
-
-    def add_axis(self, length=1.0):
-        """Handles importing a point cloud and adding it to the tree and data dictionary."""
-        try:
-            axis = self.create_axis()
-
-            # Add the point cloud as a child under the file name
-            self.add_child_to_tree_and_data(
-                parent_name="Display",
-                child_name="xyz-axis",
-                data=axis
-            )
-
-            self.add_log_message(f"Axis added to display.")
-        except Exception as e:
-            self.add_log_message(f"Failed to add point cloud: {str(e)}")
-
-
-    def show_properties(self, item):
-        """
-        Display a properties dialog for the given item, showing either its specific data
-        or a list of its children if the item is a parent.
-        """
-        item_text = item.text(0)  # Get the text of the right-clicked item
-        parent_item = item.parent()
-
-        if parent_item:
-            # If the item is a child, get the parent and child data
-            parent_name = parent_item.text(0)
-            child_name = item_text
-
-            if parent_name in self.data and child_name in self.data[parent_name]:
-                data = {
-                    'item': self.data[parent_name][child_name],  # Show child data
-                    'filename': self.data[parent_name]['file_name'],
-                    'filepath': self.data[parent_name]['file_path'],
-                    'transform_settings': self.translation_values,
-                }
-            else:
-                self.add_log_message(f"No data found for child item '{child_name}' under parent '{parent_name}'.")
-                return
-        else:
-            # If the item is a parent, get its data
-            parent_name = item_text
-
-            if parent_name in self.data:
-                data = self.data[parent_name]  # Show parent data
-            else:
-                self.add_log_message(f"No data found for parent item '{parent_name}'.")
-                return
-
-        # Show properties dialog for the selected data (either parent or child)
-        properties_dialog = PropertiesDialog(data, self)
-        properties_dialog.exec()
-
-    def selected_items(self):
-        """
-        Returns selected items from the tree, sorted by depth (children first).
-        Filters out invalid or redundant items.
-        """
-        selected_items = self.tree.selectedItems()
-        if not selected_items:
-            self.add_log_message("No items selected for filtering.")
-            return []
-
-        def get_depth(item):
-            """Helper function to calculate the depth of a tree item."""
-            depth = 0
-            while item.parent():
-                item = item.parent()
-                depth += 1
-            return depth
-
-        # Sort selected items by depth (children processed before parents)
-        sorted_items = sorted(selected_items, key=get_depth, reverse=True)
-
-        # Filter out invalid items (items not present in self.data)
-        valid_items = []
-        for item in sorted_items:
-            parent_item = item.parent()
-            if parent_item:
-                parent_name = parent_item.text(0)
-                child_name = item.text(0)
-                if parent_name in self.data and child_name in self.data[parent_name]:
-                    valid_items.append(item)
-                else:
-                    self.add_log_message(
-                        f"Skipping invalid child item '{child_name}' under parent '{parent_name}'."
-                    )
-            else:
-                parent_name = item.text(0)
-                if parent_name in self.data:
-                    valid_items.append(item)
-                else:
-                    self.add_log_message(f"Skipping invalid parent item '{parent_name}'.")
-
-        return valid_items
-
-    def remove_selected_items(self):
-        """Removes selected items from the tree, data dictionary, and Open3D viewer."""
-        selected_items = self.selected_items()
-        if not selected_items:
-            self.add_log_message("No items selected for removal.")
-            return
-
-        # Process selected items
-        processed_parents = set()
-        for item in selected_items:
-            parent_item = item.parent()
-            if parent_item:
-                # Handle child item
-                parent_name = parent_item.text(0)
-                child_name = item.text(0)
-
-                self.add_log_message(f"Removing child '{child_name}' under parent '{parent_name}'.")
-                self.remove_from_tree_and_data(parent_name, child_name)
-
-            else:
-                # Handle parent item
-                parent_name = item.text(0)
-                if parent_name not in processed_parents:
-                    self.add_log_message(f"Removing parent '{parent_name}' and all its children.")
-                    self.remove_from_tree_and_data(parent_name)
-                    processed_parents.add(parent_name)
-
-    def add_child_to_tree_and_data(self, parent_name, child_name, data):
-        """Handles adding both parent and child items to the tree and updating the data dictionary."""
-        # Check if the parent item exists in the tree; create it if not
-        parent_item = self._find_tree_item(parent_name)
-        if not parent_item:
-            # Create the parent item
-            parent_item = QTreeWidgetItem([parent_name])
-            parent_item.setFlags(parent_item.flags() | Qt.ItemIsUserCheckable)
-            parent_item.setCheckState(0, Qt.Checked)  # Changed to Qt.Checked for PyQt5
-            self.tree.addTopLevelItem(parent_item)
-            self.tree.expandItem(parent_item)
-
-            self.add_log_message(f"add_child_to_tree_and_data: Created new parent item '{parent_name}' in tree.")
-
-        # Check if the parent exists in the data dictionary; create it if not
-        if parent_name not in self.data:
-            self.data[parent_name] = {}
-            self.add_log_message(f"add_child_to_tree_and_data: Created new parent '{parent_name}' in data dictionary.")
-
-        # Add the child item to the parent in the tree
-        child_item = QTreeWidgetItem([child_name])
-        child_item.setCheckState(0, Qt.Checked)  # Initialize checkbox as checked
-        child_item.setFlags(child_item.flags() | Qt.ItemIsUserCheckable)
-        parent_item.addChild(child_item)
-        self.tree.expandItem(parent_item)
-
-        self.add_log_message(
-            f"add_child_to_tree_and_data: Adding child '{child_name}' under parent '{parent_name}' in tree.")
-
-        # Add the child data to the dictionary under the parent
-        self.data[parent_name][child_name] = data
-
-        # Ensure the point cloud is added to the Open3D viewer
-        self.o3d_viewer.add_item(data, parent_name, child_name)
-        self.add_log_message(f"add_child_to_tree_and_data: '{child_name}' added to Open3D viewer.")
-
-    def remove_from_tree_and_data(self, parent_name, child_name=None):
-        if parent_name not in self.data:
-            self.add_log_message(f"Parent '{parent_name}' not found in data.")
-            return
-
-        if child_name is None:
-            # Remove parent and all its children
-            del self.data[parent_name]
-            parent_item = self._find_tree_item(parent_name)
-            if parent_item:
-                index = self.tree.indexOfTopLevelItem(parent_item)
-                if index != -1:
-                    self.tree.takeTopLevelItem(index)
-            self.o3d_viewer.remove_item(parent_name)
-            self.add_log_message(f"Removed parent '{parent_name}' and its children.")
-        else:
-            # Remove only the child
-            if child_name in self.data[parent_name]:
-                del self.data[parent_name][child_name]
-                parent_item = self._find_tree_item(parent_name)
-                if parent_item:
-                    for i in range(parent_item.childCount()):
-                        child_item = parent_item.child(i)
-                        if child_item.text(0) == child_name:
-                            parent_item.removeChild(child_item)
-                            break
-                self.o3d_viewer.remove_item(parent_name, child_name)
-                self.add_log_message(f"Removed child '{child_name}' under parent '{parent_name}'.")
-
-            # Remove the parent if it has no more children
-            if not self.data[parent_name]:
-                del self.data[parent_name]
-                parent_item = self._find_tree_item(parent_name)
-                if parent_item:
-                    index = self.tree.indexOfTopLevelItem(parent_item)
-                    if index != -1:
-                        self.tree.takeTopLevelItem(index)
-                self.o3d_viewer.remove_item(parent_name)
-                self.add_log_message(f"Removed parent '{parent_name}' as it had no more children.")
-
-    def _find_tree_item(self, file_name):
-        for i in range(self.tree.topLevelItemCount()):
-            item = self.tree.topLevelItem(i)
-            if item.text(0) == file_name:
-                return item
-        return None
-
-    def delete_item(self, item, is_child):
-        """
-        Delete the selected item from the tree and data.
-        If is_child is True, deletes only the child.
-        Otherwise, deletes the parent and all its children.
-        """
-        if is_child:
-            parent_item = item.parent()
-            parent_name = parent_item.text(0)
-            child_name = item.text(0)
-            self.remove_from_tree_and_data(parent_name, child_name)
-            self.add_log_message(f"Deleted child '{child_name}' under parent '{parent_name}'.")
-        else:
-            parent_name = item.text(0)
-            self.remove_from_tree_and_data(parent_name)
-            self.add_log_message(f"Deleted parent '{parent_name}' and all its children.")
-
-    def open_file_dialog(self, dialog_type):
-        """Open file dialog to select files based on the type of addition (pointcloud or mesh)."""
-        if dialog_type == "Pointcloud":
-            file_paths, _ = QFileDialog.getOpenFileNames(
-                self, "Select Pointcloud Files", "",
-                "Pointclouds (*.pcd *.las *.ply *.xyz *.xyzn *.xyzrgb *.pts)"
-            )
-            if file_paths:
-                for file_path in file_paths:
-                    self.add_pointcloud(file_path)
-        elif dialog_type == "Mesh":
-            file_paths, _ = QFileDialog.getOpenFileNames(
-                self, "Select Mesh Files", "",
-                "Meshes (*.ply *.obj *.stl *.glb *.fbx *.3mf *.off)"
-            )
-            if file_paths:
-                for file_path in file_paths:
-                    self.add_mesh(file_path, transform_settings={})
-
-    def on_item_changed(self, item):
-        is_checked = item.checkState(0) == Qt.CheckState.Checked
-        # Prevent infinite loops
-        self.tree.blockSignals(True)
-        try:
-            # Parent-level changes
-            if not item.parent():
-                parent_name = item.text(0)
-                for i in range(item.childCount()):
-                    child_item = item.child(i)
-                    child_item.setCheckState(0, Qt.CheckState.Checked if is_checked else Qt.CheckState.Unchecked)
-                    child_name = child_item.text(0)
-                    # Toggle visibility in the viewer
-                    self.o3d_viewer.toggle_item_visibility(parent_name, child_name, is_checked)
-            else:  # Child-level changes
-                parent_name = item.parent().text(0)
-                child_name = item.text(0)
-                # Toggle visibility in the viewer
-                self.o3d_viewer.toggle_item_visibility(parent_name, child_name, is_checked)
-        finally:
-            self.tree.blockSignals(False)
-
-    def apply_spatial_transformation(self):
-        """Applies spatial transformation to selected point clouds."""
-        selected_items = self.selected_items()
-
-        # Collect selected point clouds
-        selected_point_clouds = []
-        for item in selected_items:
-            parent_name = item.parent().text(0) if item.parent() else None
-            child_name = item.text(0)
-            key = (parent_name, child_name)
-
-            if key in self.o3d_viewer.items:
-                o3d_item = self.o3d_viewer.items[key]
-                if isinstance(o3d_item, o3d.geometry.PointCloud):
-                    selected_point_clouds.append((key, o3d_item))
-
-        if not selected_point_clouds:
-            self.add_log_message("No point clouds selected for transformation.")
-            return
-
-        # Show the transformation dialog
-        dialog = TransformationDialog(self)
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            translation, rotation, mirroring = dialog.get_transformation_parameters()
-
-            for (key, point_cloud) in selected_point_clouds:
-                try:
-                    # Validate point cloud
-                    if not hasattr(point_cloud, 'points') or len(point_cloud.points) == 0:
-                        self.add_log_message(f"Point cloud '{key[1]}' is empty or invalid. Skipping transformation.")
-                        continue
-
-                    self.add_log_message(f"Attempting to translate point cloud with translation: {translation}")
-                    if not isinstance(translation, (list, tuple)) or len(translation) != 3:
-                        self.add_log_message(f"Invalid translation vector: {translation}. Skipping translation.")
-                        continue
-
-                    # Apply transformations manually
-                    if any(value != 0 for value in translation):
-                        self.add_log_message(f"Applying manual translation {translation} to point cloud '{key[1]}'.")
-                        try:
-                            # Convert points to a NumPy array, apply translation, and assign back
-                            points = np.asarray(point_cloud.points)  # Convert to NumPy array
-                            points += np.array(translation)  # Apply translation
-                            point_cloud.points = o3d.utility.Vector3dVector(points)  # Assign back
-                        except Exception as e:
-                            self.add_log_message(f"Failed to apply manual translation to '{key[1]}': {e}")
-                            continue
-
-                    if any(rotation):
-                        self.add_log_message(f"Applying rotation {rotation} to point cloud '{key[1]}'.")
-                        rotation_radians = [np.radians(angle) for angle in rotation]
-                        rotation_matrix = o3d.geometry.get_rotation_matrix_from_xyz(rotation_radians)
-                        point_cloud.rotate(rotation_matrix, center=point_cloud.get_center())
-
-                    if any(mirroring):
-                        self.add_log_message(f"Applying mirroring {mirroring} to point cloud '{key[1]}'.")
-                        mirror_matrix = np.eye(4)
-                        mirror_matrix[0, 0] = -1 if mirroring[0] else 1
-                        mirror_matrix[1, 1] = -1 if mirroring[1] else 1
-                        mirror_matrix[2, 2] = -1 if mirroring[2] else 1
-                        point_cloud.transform(mirror_matrix)
-
-                    # Remove and re-add the point cloud to refresh the viewer
-                    parent_name, child_name = key
-                    self.add_log_message(f"Removing point cloud '{child_name}' from viewer.")
-                    try:
-                        self.o3d_viewer.remove_item(parent_name, child_name)
-                        time.sleep(0.1)  # Add delay to allow viewer to process removal
-                        self.add_log_message(f"Re-adding point cloud '{child_name}' to viewer.")
-                        self.o3d_viewer.add_item(point_cloud, parent_name, child_name)
-                        time.sleep(0.1)  # Add delay to allow viewer to process re-addition
-                    except Exception as e:
-                        self.add_log_message(f"Failed to update viewer for '{child_name}': {e}")
-                        continue
-
-                    # Add log message
-                    self.add_log_message(f"Transformed point cloud '{key[1]}' under '{key[0]}'.")
-
-                except Exception as e:
-                    self.add_log_message(f"Failed to transform point cloud '{key[1]}': {e}")
-
-            # Refresh the Open3D viewer
-            self.o3d_viewer.update_viewer()
-
-
-    # Define a function to open the URL
-    @staticmethod
-    def open_user_guide():
-        QDesktopServices.openUrl(QUrl("https://github.com/SpatialDigger/PCPro3/tree/main/docs"))
 
     def create_menu_bar(self):
         menu_bar = self.menuBar()
@@ -911,13 +402,243 @@ class MainWindow(QMainWindow):
         debug_action.triggered.connect(lambda: self.debug())
         debug_menu.addAction(debug_action)
 
-    def convert(self):
-        pass
+    #####
 
-    def debug(self):
-        # Assuming self.data is a dictionary
-        self.add_log_message(f"Debug: Current data structure:\n{pformat(self.data)}")
+    def add_pointcloud(self, file_path, transform_settings=None):
+        """Handles importing a point cloud and adding it to the tree and data dictionary."""
+        try:
+            # Import the point cloud data
+            data = self.import_pointcloud(file_path, transform_settings)
+            file_name = data["file_name"]
 
+            # Add the point cloud as a child under the file name
+            self.add_child_to_tree_and_data(
+                parent_name=file_name,
+                child_name="Pointcloud",
+                data=data["Pointcloud"]
+            )
+
+            # Store additional metadata in the parent data dictionary
+            self.data[file_name].update({
+                "transform_settings": self.translation_values,
+                "file_path": file_path,
+                "file_name": file_name,
+            })
+
+            self.add_log_message(f"Point cloud successfully added for file '{file_name}'.")
+        except Exception as e:
+            self.add_log_message(f"Failed to add point cloud: {str(e)}")
+
+    def selected_items(self):
+        """
+        Returns selected items from the tree, sorted by depth (children first).
+        Filters out invalid or redundant items.
+        """
+        selected_items = self.tree.selectedItems()
+        if not selected_items:
+            self.add_log_message("No items selected for filtering.")
+            return []
+
+        def get_depth(item):
+            """Helper function to calculate the depth of a tree item."""
+            depth = 0
+            while item.parent():
+                item = item.parent()
+                depth += 1
+            return depth
+
+        # Sort selected items by depth (children processed before parents)
+        sorted_items = sorted(selected_items, key=get_depth, reverse=True)
+
+        # Filter out invalid items (items not present in self.data)
+        valid_items = []
+        for item in sorted_items:
+            parent_item = item.parent()
+            if parent_item:
+                parent_name = parent_item.text(0)
+                child_name = item.text(0)
+                if parent_name in self.data and child_name in self.data[parent_name]:
+                    valid_items.append(item)
+                else:
+                    self.add_log_message(
+                        f"Skipping invalid child item '{child_name}' under parent '{parent_name}'."
+                    )
+            else:
+                parent_name = item.text(0)
+                if parent_name in self.data:
+                    valid_items.append(item)
+                else:
+                    self.add_log_message(f"Skipping invalid parent item '{parent_name}'.")
+
+        return valid_items
+
+    def remove_selected_items(self):
+        """Removes selected items from the tree, data dictionary, and Open3D viewer."""
+        selected_items = self.selected_items()
+        if not selected_items:
+            self.add_log_message("No items selected for removal.")
+            return
+
+        # Process selected items
+        processed_parents = set()
+        for item in selected_items:
+            parent_item = item.parent()
+            if parent_item:
+                # Handle child item
+                parent_name = parent_item.text(0)
+                child_name = item.text(0)
+
+                self.add_log_message(f"Removing child '{child_name}' under parent '{parent_name}'.")
+                self.remove_from_tree_and_data(parent_name, child_name)
+
+            else:
+                # Handle parent item
+                parent_name = item.text(0)
+                if parent_name not in processed_parents:
+                    self.add_log_message(f"Removing parent '{parent_name}' and all its children.")
+                    self.remove_from_tree_and_data(parent_name)
+                    processed_parents.add(parent_name)
+
+    def add_child_to_tree_and_data(self, parent_name, child_name, data):
+        """Handles adding both parent and child items to the tree and updating the data dictionary."""
+        # Check if the parent item exists in the tree; create it if not
+        parent_item = self._find_tree_item(parent_name)
+        if not parent_item:
+            # Create the parent item
+            parent_item = QTreeWidgetItem([parent_name])
+            parent_item.setFlags(parent_item.flags() | Qt.ItemIsUserCheckable)
+            parent_item.setCheckState(0, Qt.Checked)  # Changed to Qt.Checked for PyQt5
+            self.tree.addTopLevelItem(parent_item)
+            self.tree.expandItem(parent_item)
+
+            self.add_log_message(f"add_child_to_tree_and_data: Created new parent item '{parent_name}' in tree.")
+
+        # Check if the parent exists in the data dictionary; create it if not
+        if parent_name not in self.data:
+            self.data[parent_name] = {}
+            self.add_log_message(f"add_child_to_tree_and_data: Created new parent '{parent_name}' in data dictionary.")
+
+        # Add the child item to the parent in the tree
+        child_item = QTreeWidgetItem([child_name])
+        child_item.setCheckState(0, Qt.Checked)  # Initialize checkbox as checked
+        child_item.setFlags(child_item.flags() | Qt.ItemIsUserCheckable)
+        parent_item.addChild(child_item)
+        self.tree.expandItem(parent_item)
+
+        self.add_log_message(
+            f"add_child_to_tree_and_data: Adding child '{child_name}' under parent '{parent_name}' in tree.")
+
+        # Add the child data to the dictionary under the parent
+        self.data[parent_name][child_name] = data
+
+        # Ensure the point cloud is added to the Open3D viewer
+        self.o3d_viewer.add_item(data, parent_name, child_name)
+        self.add_log_message(f"add_child_to_tree_and_data: '{child_name}' added to Open3D viewer.")
+
+    def remove_from_tree_and_data(self, parent_name, child_name=None):
+        if parent_name not in self.data:
+            self.add_log_message(f"Parent '{parent_name}' not found in data.")
+            return
+
+        if child_name is None:
+            # Remove parent and all its children
+            del self.data[parent_name]
+            parent_item = self._find_tree_item(parent_name)
+            if parent_item:
+                index = self.tree.indexOfTopLevelItem(parent_item)
+                if index != -1:
+                    self.tree.takeTopLevelItem(index)
+            self.o3d_viewer.remove_item(parent_name)
+            self.add_log_message(f"Removed parent '{parent_name}' and its children.")
+        else:
+            # Remove only the child
+            if child_name in self.data[parent_name]:
+                del self.data[parent_name][child_name]
+                parent_item = self._find_tree_item(parent_name)
+                if parent_item:
+                    for i in range(parent_item.childCount()):
+                        child_item = parent_item.child(i)
+                        if child_item.text(0) == child_name:
+                            parent_item.removeChild(child_item)
+                            break
+                self.o3d_viewer.remove_item(parent_name, child_name)
+                self.add_log_message(f"Removed child '{child_name}' under parent '{parent_name}'.")
+
+            # Remove the parent if it has no more children
+            if not self.data[parent_name]:
+                del self.data[parent_name]
+                parent_item = self._find_tree_item(parent_name)
+                if parent_item:
+                    index = self.tree.indexOfTopLevelItem(parent_item)
+                    if index != -1:
+                        self.tree.takeTopLevelItem(index)
+                self.o3d_viewer.remove_item(parent_name)
+                self.add_log_message(f"Removed parent '{parent_name}' as it had no more children.")
+
+    def _find_tree_item(self, file_name):
+        for i in range(self.tree.topLevelItemCount()):
+            item = self.tree.topLevelItem(i)
+            if item.text(0) == file_name:
+                return item
+        return None
+
+    def delete_item(self, item, is_child):
+        """
+        Delete the selected item from the tree and data.
+        If is_child is True, deletes only the child.
+        Otherwise, deletes the parent and all its children.
+        """
+        if is_child:
+            parent_item = item.parent()
+            parent_name = parent_item.text(0)
+            child_name = item.text(0)
+            self.remove_from_tree_and_data(parent_name, child_name)
+            self.add_log_message(f"Deleted child '{child_name}' under parent '{parent_name}'.")
+        else:
+            parent_name = item.text(0)
+            self.remove_from_tree_and_data(parent_name)
+            self.add_log_message(f"Deleted parent '{parent_name}' and all its children.")
+
+    def open_file_dialog(self, dialog_type):
+        """Open file dialog to select files based on the type of addition (pointcloud or mesh)."""
+        if dialog_type == "Pointcloud":
+            file_paths, _ = QFileDialog.getOpenFileNames(
+                self, "Select Pointcloud Files", "",
+                "Pointclouds (*.pcd *.las *.ply *.xyz *.xyzn *.xyzrgb *.pts)"
+            )
+            if file_paths:
+                for file_path in file_paths:
+                    self.add_pointcloud(file_path)
+        elif dialog_type == "Mesh":
+            file_paths, _ = QFileDialog.getOpenFileNames(
+                self, "Select Mesh Files", "",
+                "Meshes (*.ply *.obj *.stl *.glb *.fbx *.3mf *.off)"
+            )
+            if file_paths:
+                for file_path in file_paths:
+                    self.add_mesh(file_path, transform_settings={})
+
+    def on_item_changed(self, item):
+        is_checked = item.checkState(0) == Qt.CheckState.Checked
+        # Prevent infinite loops
+        self.tree.blockSignals(True)
+        try:
+            # Parent-level changes
+            if not item.parent():
+                parent_name = item.text(0)
+                for i in range(item.childCount()):
+                    child_item = item.child(i)
+                    child_item.setCheckState(0, Qt.CheckState.Checked if is_checked else Qt.CheckState.Unchecked)
+                    child_name = child_item.text(0)
+                    # Toggle visibility in the viewer
+                    self.o3d_viewer.toggle_item_visibility(parent_name, child_name, is_checked)
+            else:  # Child-level changes
+                parent_name = item.parent().text(0)
+                child_name = item.text(0)
+                # Toggle visibility in the viewer
+                self.o3d_viewer.toggle_item_visibility(parent_name, child_name, is_checked)
+        finally:
+            self.tree.blockSignals(False)
 
     def add_mesh(self, file_path, transform_settings=None):
         """Handles importing a mesh and adding it to the tree and data dictionary."""
@@ -994,19 +715,6 @@ class MainWindow(QMainWindow):
             "file_path": file_path,
             "file_name": file_name,
         }
-
-    def apply_transformations(self, mesh, transform_settings):
-        """Apply transformations to the mesh based on settings."""
-        self.add_log_message("Applying transformations...")
-        if "scale" in transform_settings:
-            scale_factor = transform_settings["scale"]
-            mesh.scale(scale_factor, center=mesh.get_center())
-        if "rotation" in transform_settings:
-            rotation_matrix = transform_settings["rotation"]  # Should be a 3x3 matrix
-            mesh.rotate(rotation_matrix, center=mesh.get_center())
-        if "translation" in transform_settings:
-            translation_vector = transform_settings["translation"]
-            mesh.translate(translation_vector)
 
     def import_pointcloud(self, file_path, transform_settings):
         """Load and process a point cloud."""
@@ -1086,85 +794,311 @@ class MainWindow(QMainWindow):
         pcd.colors = o3d.utility.Vector3dVector(colors)
         return pcd
 
-    def open_dbscan_dialog(self):
+    def add_log_message(self, message):
+        self.log_window.add_message(message)
 
-        # Retrieve selected items from the tree
+    def closeEvent(self, event):
+        """Handle the close event to ensure Open3D viewer is closed."""
+        self.o3d_viewer.close()
+        super().closeEvent(event)
+
+
+    #####
+    # Menu items
+    @staticmethod
+    def open_user_guide():
+        QDesktopServices.openUrl(QUrl("https://github.com/SpatialDigger/PCPro3/tree/main/docs"))
+
+    def show_properties(self, item):
+        """
+        Display a properties dialog for the given item, showing either its specific data
+        or a list of its children if the item is a parent.
+        """
+        item_text = item.text(0)  # Get the text of the right-clicked item
+        parent_item = item.parent()
+
+        if parent_item:
+            # If the item is a child, get the parent and child data
+            parent_name = parent_item.text(0)
+            child_name = item_text
+
+            if parent_name in self.data and child_name in self.data[parent_name]:
+                data = {
+                    'item': self.data[parent_name][child_name],  # Show child data
+                    'filename': self.data[parent_name]['file_name'],
+                    'filepath': self.data[parent_name]['file_path'],
+                    'transform_settings': self.translation_values,
+                }
+            else:
+                self.add_log_message(f"No data found for child item '{child_name}' under parent '{parent_name}'.")
+                return
+        else:
+            # If the item is a parent, get its data
+            parent_name = item_text
+
+            if parent_name in self.data:
+                data = self.data[parent_name]  # Show parent data
+            else:
+                self.add_log_message(f"No data found for parent item '{parent_name}'.")
+                return
+
+        # Show properties dialog for the selected data (either parent or child)
+        properties_dialog = PropertiesDialog(data, self)
+        properties_dialog.exec()
+
+    def debug(self):
+        # Assuming self.data is a dictionary
+        self.add_log_message(f"Debug: Current data structure:\n{pformat(self.data)}")
+
+
+
+
+    #####
+    # To be moved
+
+    def change_point_cloud_color(self, item):
+        """Change the color of a point cloud."""
+        parent_item = item.parent()
+        if not parent_item:
+            self.add_log_message("No parent item found.")
+            return
+
+        parent_name = parent_item.text(0)
+        child_name = item.text(0)
+
+        color = QColorDialog.getColor()
+        if not color.isValid():
+            self.add_log_message("Invalid color selected.")
+            return
+
+        # Convert QColor to Open3D format (normalized)
+        red, green, blue = color.red() / 255.0, color.green() / 255.0, color.blue() / 255.0
+        new_color = [red, green, blue]
+
+        # Retrieve the point cloud
+        key = (parent_name, child_name)
+        if key in self.o3d_viewer.items:
+            point_cloud = self.o3d_viewer.items[key]
+
+            num_points = len(point_cloud.points)
+            if num_points == 0:
+                self.add_log_message(f"Point cloud '{child_name}' under '{parent_name}' has no points.")
+                return
+
+            # **Store the original colors using (parent_name, child_name)**
+            if key not in self.original_colors:
+                original_colors = np.asarray(point_cloud.colors)  # Convert to NumPy array
+                if original_colors.size > 0:
+                    self.original_colors[key] = original_colors.copy()  # Store a copy
+                else:
+                    self.original_colors[key] = np.ones((num_points, 3))  # Default to white
+
+            # Apply new color to all points
+            point_cloud.colors = o3d.utility.Vector3dVector(np.tile(new_color, (num_points, 1)))
+
+            # Remove and re-add the geometry to force an update
+            self.o3d_viewer.vis.remove_geometry(point_cloud)
+            self.o3d_viewer.vis.add_geometry(point_cloud)
+
+            # Refresh viewer
+            self.o3d_viewer.update_viewer()
+            self.add_log_message(f"Color of '{child_name}' under '{parent_name}' changed to {new_color}.")
+        else:
+            self.add_log_message(f"Point cloud for '{child_name}' under '{parent_name}' not found.")
+
+    def revert_point_cloud_color(self, item):
+        """Revert the point cloud to its original color."""
+        self.add_log_message("Revert color action triggered.")
+
+        if not item:
+            self.add_log_message("No item selected to revert color.")
+            return
+
+        child_name = item.text(0)
+        parent_item = item.parent()
+        if not parent_item:
+            self.add_log_message(f"'{child_name}' does not have a parent item.")
+            return
+
+        parent_name = parent_item.text(0)
+        key = (parent_name, child_name)  # Ensure we use the correct key
+
+        # Check if original colors exist
+        if key not in self.original_colors:
+            self.add_log_message(f"No original color found for '{child_name}' under '{parent_name}'.")
+            return
+
+        # Retrieve the point cloud
+        if key in self.o3d_viewer.items:
+            point_cloud = self.o3d_viewer.items[key]
+
+            # Restore original per-point colors
+            original_colors = self.original_colors[key]  # Use the correct key
+            point_cloud.colors = o3d.utility.Vector3dVector(original_colors)
+
+            # Remove and re-add the geometry to update Open3D viewer
+            self.o3d_viewer.vis.remove_geometry(point_cloud)
+            self.o3d_viewer.vis.add_geometry(point_cloud)
+
+            # Refresh viewer
+            self.o3d_viewer.update_viewer()
+            self.add_log_message(f"Color of '{child_name}' under '{parent_name}' reverted to original.")
+        else:
+            self.add_log_message(f"Point cloud for '{child_name}' under '{parent_name}' not found.")
+
+    def create_axis(self, length=1.0):
+        """
+        Create an RGB-colored XYZ axis visualization in Open3D.
+        Args:
+            length (float): Length of the axes.
+        Returns:
+            o3d.geometry.LineSet: Axis representation as a LineSet.
+        """
+        import numpy as np
+
+        # Points for the origin and the tips of the axes
+        points = np.array([
+            [0, 0, 0],  # Origin
+            [length, 0, 0],  # X-axis tip
+            [0, length, 0],  # Y-axis tip
+            [0, 0, length],  # Z-axis tip
+        ], dtype=np.float64)
+
+        # Lines connecting the origin to the tips of the axes
+        lines = np.array([
+            [0, 1],  # Line for X-axis
+            [0, 2],  # Line for Y-axis
+            [0, 3],  # Line for Z-axis
+        ], dtype=np.int32)
+
+        # RGB colors for the lines (one per line)
+        colors = np.array([
+            [1, 0, 0],  # Red for X-axis
+            [0, 1, 0],  # Green for Y-axis
+            [0, 0, 1],  # Blue for Z-axis
+        ], dtype=np.float64)
+
+        # Create the LineSet object
+        axis = o3d.geometry.LineSet()
+        axis.points = o3d.utility.Vector3dVector(points)
+        axis.lines = o3d.utility.Vector2iVector(lines)
+        axis.colors = o3d.utility.Vector3dVector(colors)
+
+        return axis
+
+    def add_axis(self, length=1.0):
+        """Handles importing a point cloud and adding it to the tree and data dictionary."""
+        try:
+            axis = self.create_axis()
+
+            # Add the point cloud as a child under the file name
+            self.add_child_to_tree_and_data(
+                parent_name="Display",
+                child_name="xyz-axis",
+                data=axis
+            )
+
+            self.add_log_message(f"Axis added to display.")
+        except Exception as e:
+            self.add_log_message(f"Failed to add point cloud: {str(e)}")
+
+    def apply_spatial_transformation(self):
+        """Applies spatial transformation to selected point clouds."""
         selected_items = self.selected_items()
 
+        # Collect selected point clouds
+        selected_point_clouds = []
         for item in selected_items:
-            # Determine the file name and check hierarchy
-            if item.parent():  # If it's a child item
-                parent_name = item.parent().text(0)  # Parent holds the file name
-                child_name = item.text(0)  # Child text represents the cloud type
-            else:  # If it's a top-level (parent) item
-                self.add_log_message("Top-level items cannot be clustered directly.")
-                continue
+            parent_name = item.parent().text(0) if item.parent() else None
+            child_name = item.text(0)
+            key = (parent_name, child_name)
 
-            # Retrieve the point cloud data
-            data = self.data.get(parent_name)
-            if not data:
-                self.add_log_message(f"No valid point cloud found for {parent_name}. Skipping.")
-                continue
-            point_cloud = data[child_name]
+            if key in self.o3d_viewer.items:
+                o3d_item = self.o3d_viewer.items[key]
+                if isinstance(o3d_item, o3d.geometry.PointCloud):
+                    selected_point_clouds.append((key, o3d_item))
 
-            # Open the dialog to configure DBSCAN parameters
-            dialog = DBSCANDialog(self)
-            if dialog.exec() != QDialog.DialogCode.Accepted:
-                self.add_log_message("DBSCAN dialog canceled.")
-                continue
+        if not selected_point_clouds:
+            self.add_log_message("No point clouds selected for transformation.")
+            return
 
-            # Retrieve DBSCAN parameters from the dialog
-            eps = dialog.get_eps()
-            min_points = dialog.get_min_points()
+        # Show the transformation dialog
+        dialog = TransformationDialog(self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            translation, rotation, mirroring = dialog.get_transformation_parameters()
 
-            # Perform DBSCAN clustering
-            def perform_dbscan(point_cloud, eps, min_points):
-                # Convert point cloud to NumPy array
-                points = np.asarray(point_cloud.points)
+            for (key, point_cloud) in selected_point_clouds:
+                try:
+                    # Validate point cloud
+                    if not hasattr(point_cloud, 'points') or len(point_cloud.points) == 0:
+                        self.add_log_message(f"Point cloud '{key[1]}' is empty or invalid. Skipping transformation.")
+                        continue
 
-                # Perform DBSCAN
-                labels = np.array(o3d.geometry.PointCloud.cluster_dbscan(
-                    point_cloud, eps=eps, min_points=min_points, print_progress=True
-                ))
+                    self.add_log_message(f"Attempting to translate point cloud with translation: {translation}")
+                    if not isinstance(translation, (list, tuple)) or len(translation) != 3:
+                        self.add_log_message(f"Invalid translation vector: {translation}. Skipping translation.")
+                        continue
 
-                return labels
+                    # Apply transformations manually
+                    if any(value != 0 for value in translation):
+                        self.add_log_message(f"Applying manual translation {translation} to point cloud '{key[1]}'.")
+                        try:
+                            # Convert points to a NumPy array, apply translation, and assign back
+                            points = np.asarray(point_cloud.points)  # Convert to NumPy array
+                            points += np.array(translation)  # Apply translation
+                            point_cloud.points = o3d.utility.Vector3dVector(points)  # Assign back
+                        except Exception as e:
+                            self.add_log_message(f"Failed to apply manual translation to '{key[1]}': {e}")
+                            continue
 
-            labels = perform_dbscan(point_cloud, eps, min_points)
+                    if any(rotation):
+                        self.add_log_message(f"Applying rotation {rotation} to point cloud '{key[1]}'.")
+                        rotation_radians = [np.radians(angle) for angle in rotation]
+                        rotation_matrix = o3d.geometry.get_rotation_matrix_from_xyz(rotation_radians)
+                        point_cloud.rotate(rotation_matrix, center=point_cloud.get_center())
 
-            # Check if DBSCAN was successful
-            if labels is None or len(labels) == 0:
-                self.add_log_message(f"DBSCAN failed for {parent_name}.")
-                continue
+                    if any(mirroring):
+                        self.add_log_message(f"Applying mirroring {mirroring} to point cloud '{key[1]}'.")
+                        mirror_matrix = np.eye(4)
+                        mirror_matrix[0, 0] = -1 if mirroring[0] else 1
+                        mirror_matrix[1, 1] = -1 if mirroring[1] else 1
+                        mirror_matrix[2, 2] = -1 if mirroring[2] else 1
+                        point_cloud.transform(mirror_matrix)
 
-            max_label = labels.max()
-            self.add_log_message(f"DBSCAN found {max_label + 1} clusters for {child_name}.")
+                    # Remove and re-add the point cloud to refresh the viewer
+                    parent_name, child_name = key
+                    self.add_log_message(f"Removing point cloud '{child_name}' from viewer.")
+                    try:
+                        self.o3d_viewer.remove_item(parent_name, child_name)
+                        time.sleep(0.1)  # Add delay to allow viewer to process removal
+                        self.add_log_message(f"Re-adding point cloud '{child_name}' to viewer.")
+                        self.o3d_viewer.add_item(point_cloud, parent_name, child_name)
+                        time.sleep(0.1)  # Add delay to allow viewer to process re-addition
+                    except Exception as e:
+                        self.add_log_message(f"Failed to update viewer for '{child_name}': {e}")
+                        continue
 
-            # Loop through each cluster (label)
-            for label in range(max_label + 1):
-                # Select the points belonging to the current cluster
-                cluster_indices = np.where(labels == label)[0]
-                cluster_points = point_cloud.select_by_index(cluster_indices)
+                    # Add log message
+                    self.add_log_message(f"Transformed point cloud '{key[1]}' under '{key[0]}'.")
 
-                # Name the cluster with a suffix based on the cluster label
-                cluster_name = f"{child_name}_Cluster_{label}"
+                except Exception as e:
+                    self.add_log_message(f"Failed to transform point cloud '{key[1]}': {e}")
 
-                # Retain the original colors of the cluster points
-                original_colors = np.asarray(point_cloud.colors)[cluster_indices]  # Extract original RGB colors
-                cluster_points.colors = o3d.utility.Vector3dVector(original_colors)  # Assign original colors
-
-                # Add the cluster to the data dictionary
-                self.data[parent_name][cluster_name] = cluster_points
-
-                # Add the cluster to the tree and viewer
-                self.add_child_to_tree_and_data(parent_name, cluster_name, cluster_points)
-
-                # Add the cluster to the viewer
-                self.o3d_viewer.add_item(cluster_points, parent_name, cluster_name)
-                self.add_log_message(f"Cluster {label} added: {cluster_name}")
-
-            # Update the viewer
+            # Refresh the Open3D viewer
             self.o3d_viewer.update_viewer()
-            self.add_log_message("Viewer updated with DBSCAN clusters.")
+
+    def apply_transformations(self, mesh, transform_settings):
+        """Apply transformations to the mesh based on settings."""
+        self.add_log_message("Applying transformations...")
+        if "scale" in transform_settings:
+            scale_factor = transform_settings["scale"]
+            mesh.scale(scale_factor, center=mesh.get_center())
+        if "rotation" in transform_settings:
+            rotation_matrix = transform_settings["rotation"]  # Should be a 3x3 matrix
+            mesh.rotate(rotation_matrix, center=mesh.get_center())
+        if "translation" in transform_settings:
+            translation_vector = transform_settings["translation"]
+            mesh.translate(translation_vector)
 
     def filter_points_by_hull_footprint(self):
         """Filters points from a selected Open3D point cloud that fall within the footprint of a selected line set (3D convex hull)."""
@@ -1267,13 +1201,92 @@ class MainWindow(QMainWindow):
 
                 self.add_log_message(f"Added filtered point cloud '{child_name}' under '{parent_name}'.")
 
-    def add_log_message(self, message):
-        self.log_window.add_message(message)
+    def open_dbscan_dialog(self):
 
-    def closeEvent(self, event):
-        """Handle the close event to ensure Open3D viewer is closed."""
-        self.o3d_viewer.close()
-        super().closeEvent(event)
+        # Retrieve selected items from the tree
+        selected_items = self.selected_items()
+
+        for item in selected_items:
+            # Determine the file name and check hierarchy
+            if item.parent():  # If it's a child item
+                parent_name = item.parent().text(0)  # Parent holds the file name
+                child_name = item.text(0)  # Child text represents the cloud type
+            else:  # If it's a top-level (parent) item
+                self.add_log_message("Top-level items cannot be clustered directly.")
+                continue
+
+            # Retrieve the point cloud data
+            data = self.data.get(parent_name)
+            if not data:
+                self.add_log_message(f"No valid point cloud found for {parent_name}. Skipping.")
+                continue
+            point_cloud = data[child_name]
+
+            # Open the dialog to configure DBSCAN parameters
+            dialog = DBSCANDialog(self)
+            if dialog.exec() != QDialog.DialogCode.Accepted:
+                self.add_log_message("DBSCAN dialog canceled.")
+                continue
+
+            # Retrieve DBSCAN parameters from the dialog
+            eps = dialog.get_eps()
+            min_points = dialog.get_min_points()
+
+            # Perform DBSCAN clustering
+            def perform_dbscan(point_cloud, eps, min_points):
+                # Convert point cloud to NumPy array
+                points = np.asarray(point_cloud.points)
+
+                # Perform DBSCAN
+                labels = np.array(o3d.geometry.PointCloud.cluster_dbscan(
+                    point_cloud, eps=eps, min_points=min_points, print_progress=True
+                ))
+
+                return labels
+
+            labels = perform_dbscan(point_cloud, eps, min_points)
+
+            # Check if DBSCAN was successful
+            if labels is None or len(labels) == 0:
+                self.add_log_message(f"DBSCAN failed for {parent_name}.")
+                continue
+
+            max_label = labels.max()
+            self.add_log_message(f"DBSCAN found {max_label + 1} clusters for {child_name}.")
+
+            # Loop through each cluster (label)
+            for label in range(max_label + 1):
+                # Select the points belonging to the current cluster
+                cluster_indices = np.where(labels == label)[0]
+                cluster_points = point_cloud.select_by_index(cluster_indices)
+
+                # Name the cluster with a suffix based on the cluster label
+                cluster_name = f"{child_name}_Cluster_{label}"
+
+                # Retain the original colors of the cluster points
+                original_colors = np.asarray(point_cloud.colors)[cluster_indices]  # Extract original RGB colors
+                cluster_points.colors = o3d.utility.Vector3dVector(original_colors)  # Assign original colors
+
+                # Add the cluster to the data dictionary
+                self.data[parent_name][cluster_name] = cluster_points
+
+                # Add the cluster to the tree and viewer
+                self.add_child_to_tree_and_data(parent_name, cluster_name, cluster_points)
+
+                # Add the cluster to the viewer
+                self.o3d_viewer.add_item(cluster_points, parent_name, cluster_name)
+                self.add_log_message(f"Cluster {label} added: {cluster_name}")
+
+            # Update the viewer
+            self.o3d_viewer.update_viewer()
+            self.add_log_message("Viewer updated with DBSCAN clusters.")
+
+
+    #####
+    # Experimental
+    def convert(self):
+        pass
+
 
 
 
