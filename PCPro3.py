@@ -854,7 +854,290 @@ class MainWindow(QMainWindow):
 
 
     #####
-    # To be moved
+    # To be moved to
+
+    # Tools
+    def apply_spatial_transformation(self):
+        """Applies spatial transformation to selected point clouds."""
+        selected_items = self.selected_items()
+
+        # Collect selected point clouds
+        selected_point_clouds = []
+        for item in selected_items:
+            parent_name = item.parent().text(0) if item.parent() else None
+            child_name = item.text(0)
+            key = (parent_name, child_name)
+
+            if key in self.o3d_viewer.items:
+                o3d_item = self.o3d_viewer.items[key]
+                if isinstance(o3d_item, o3d.geometry.PointCloud):
+                    selected_point_clouds.append((key, o3d_item))
+
+        if not selected_point_clouds:
+            self.add_log_message("No point clouds selected for transformation.")
+            return
+
+        # Show the transformation dialog
+        dialog = TransformationDialog(self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            translation, rotation, mirroring = dialog.get_transformation_parameters()
+
+            for (key, point_cloud) in selected_point_clouds:
+                try:
+                    # Validate point cloud
+                    if not hasattr(point_cloud, 'points') or len(point_cloud.points) == 0:
+                        self.add_log_message(f"Point cloud '{key[1]}' is empty or invalid. Skipping transformation.")
+                        continue
+
+                    self.add_log_message(f"Attempting to translate point cloud with translation: {translation}")
+                    if not isinstance(translation, (list, tuple)) or len(translation) != 3:
+                        self.add_log_message(f"Invalid translation vector: {translation}. Skipping translation.")
+                        continue
+
+                    # Apply transformations manually
+                    if any(value != 0 for value in translation):
+                        self.add_log_message(f"Applying manual translation {translation} to point cloud '{key[1]}'.")
+                        try:
+                            # Convert points to a NumPy array, apply translation, and assign back
+                            points = np.asarray(point_cloud.points)  # Convert to NumPy array
+                            points += np.array(translation)  # Apply translation
+                            point_cloud.points = o3d.utility.Vector3dVector(points)  # Assign back
+                        except Exception as e:
+                            self.add_log_message(f"Failed to apply manual translation to '{key[1]}': {e}")
+                            continue
+
+                    if any(rotation):
+                        self.add_log_message(f"Applying rotation {rotation} to point cloud '{key[1]}'.")
+                        rotation_radians = [np.radians(angle) for angle in rotation]
+                        rotation_matrix = o3d.geometry.get_rotation_matrix_from_xyz(rotation_radians)
+                        point_cloud.rotate(rotation_matrix, center=point_cloud.get_center())
+
+                    if any(mirroring):
+                        self.add_log_message(f"Applying mirroring {mirroring} to point cloud '{key[1]}'.")
+                        mirror_matrix = np.eye(4)
+                        mirror_matrix[0, 0] = -1 if mirroring[0] else 1
+                        mirror_matrix[1, 1] = -1 if mirroring[1] else 1
+                        mirror_matrix[2, 2] = -1 if mirroring[2] else 1
+                        point_cloud.transform(mirror_matrix)
+
+                    # Remove and re-add the point cloud to refresh the viewer
+                    parent_name, child_name = key
+                    self.add_log_message(f"Removing point cloud '{child_name}' from viewer.")
+                    try:
+                        self.o3d_viewer.remove_item(parent_name, child_name)
+                        time.sleep(0.1)  # Add delay to allow viewer to process removal
+                        self.add_log_message(f"Re-adding point cloud '{child_name}' to viewer.")
+                        self.o3d_viewer.add_item(point_cloud, parent_name, child_name)
+                        time.sleep(0.1)  # Add delay to allow viewer to process re-addition
+                    except Exception as e:
+                        self.add_log_message(f"Failed to update viewer for '{child_name}': {e}")
+                        continue
+
+                    # Add log message
+                    self.add_log_message(f"Transformed point cloud '{key[1]}' under '{key[0]}'.")
+
+                except Exception as e:
+                    self.add_log_message(f"Failed to transform point cloud '{key[1]}': {e}")
+
+            # Refresh the Open3D viewer
+            self.o3d_viewer.update_viewer()
+
+    def apply_transformations(self, mesh, transform_settings):
+        """Apply transformations to the mesh based on settings."""
+        self.add_log_message("Applying transformations...")
+        if "scale" in transform_settings:
+            scale_factor = transform_settings["scale"]
+            mesh.scale(scale_factor, center=mesh.get_center())
+        if "rotation" in transform_settings:
+            rotation_matrix = transform_settings["rotation"]  # Should be a 3x3 matrix
+            mesh.rotate(rotation_matrix, center=mesh.get_center())
+        if "translation" in transform_settings:
+            translation_vector = transform_settings["translation"]
+            mesh.translate(translation_vector)
+
+    def open_dbscan_dialog(self):
+
+        # Retrieve selected items from the tree
+        selected_items = self.selected_items()
+
+        for item in selected_items:
+            # Determine the file name and check hierarchy
+            if item.parent():  # If it's a child item
+                parent_name = item.parent().text(0)  # Parent holds the file name
+                child_name = item.text(0)  # Child text represents the cloud type
+            else:  # If it's a top-level (parent) item
+                self.add_log_message("Top-level items cannot be clustered directly.")
+                continue
+
+            # Retrieve the point cloud data
+            data = self.data.get(parent_name)
+            if not data:
+                self.add_log_message(f"No valid point cloud found for {parent_name}. Skipping.")
+                continue
+            point_cloud = data[child_name]
+
+            # Open the dialog to configure DBSCAN parameters
+            dialog = DBSCANDialog(self)
+            if dialog.exec() != QDialog.DialogCode.Accepted:
+                self.add_log_message("DBSCAN dialog canceled.")
+                continue
+
+            # Retrieve DBSCAN parameters from the dialog
+            eps = dialog.get_eps()
+            min_points = dialog.get_min_points()
+
+            # Perform DBSCAN clustering
+            def perform_dbscan(point_cloud, eps, min_points):
+                # Convert point cloud to NumPy array
+                points = np.asarray(point_cloud.points)
+
+                # Perform DBSCAN
+                labels = np.array(o3d.geometry.PointCloud.cluster_dbscan(
+                    point_cloud, eps=eps, min_points=min_points, print_progress=True
+                ))
+
+                return labels
+
+            labels = perform_dbscan(point_cloud, eps, min_points)
+
+            # Check if DBSCAN was successful
+            if labels is None or len(labels) == 0:
+                self.add_log_message(f"DBSCAN failed for {parent_name}.")
+                continue
+
+            max_label = labels.max()
+            self.add_log_message(f"DBSCAN found {max_label + 1} clusters for {child_name}.")
+
+            # Loop through each cluster (label)
+            for label in range(max_label + 1):
+                # Select the points belonging to the current cluster
+                cluster_indices = np.where(labels == label)[0]
+                cluster_points = point_cloud.select_by_index(cluster_indices)
+
+                # Name the cluster with a suffix based on the cluster label
+                cluster_name = f"{child_name}_Cluster_{label}"
+
+                # Retain the original colors of the cluster points
+                original_colors = np.asarray(point_cloud.colors)[cluster_indices]  # Extract original RGB colors
+                cluster_points.colors = o3d.utility.Vector3dVector(original_colors)  # Assign original colors
+
+                # Add the cluster to the data dictionary
+                self.data[parent_name][cluster_name] = cluster_points
+
+                # Add the cluster to the tree and viewer
+                self.add_child_to_tree_and_data(parent_name, cluster_name, cluster_points)
+
+                # Add the cluster to the viewer
+                self.o3d_viewer.add_item(cluster_points, parent_name, cluster_name)
+                self.add_log_message(f"Cluster {label} added: {cluster_name}")
+
+            # Update the viewer
+            self.o3d_viewer.update_viewer()
+            self.add_log_message("Viewer updated with DBSCAN clusters.")
+
+    def filter_points_by_hull_footprint(self):
+        """Filters points from a selected Open3D point cloud that fall within the footprint of a selected line set (3D convex hull)."""
+        selected_items = self.selected_items()
+
+        # Separate selected point clouds and line sets
+        selected_point_clouds = []
+        selected_line_sets = []
+        for item in selected_items:
+            parent_name = item.parent().text(0) if item.parent() else None
+            child_name = item.text(0)
+            key = (parent_name, child_name)
+
+            if key in self.o3d_viewer.items:
+                o3d_item = self.o3d_viewer.items[key]
+                if isinstance(o3d_item, o3d.geometry.PointCloud):
+                    selected_point_clouds.append(o3d_item)
+                elif isinstance(o3d_item, o3d.geometry.LineSet):
+                    selected_line_sets.append(o3d_item)
+
+        if not selected_point_clouds or not selected_line_sets:
+            self.add_log_message("At least one point cloud and one line set must be selected.")
+            return
+
+        # Iterate through selected point clouds and line sets
+        for point_cloud in selected_point_clouds:
+            for line_set in selected_line_sets:
+                # Flatten the point cloud (remove z-coordinate)
+                points = np.asarray(point_cloud.points)
+                colors = np.asarray(point_cloud.colors)  # Get RGB values
+                points_2d = points[:, :2]
+
+                # Extract edges from the line set
+                lines = np.asarray(line_set.lines)
+                vertices = np.asarray(line_set.points)
+                vertices_2d = vertices[:, :2]
+
+                # Ensure the line set forms a closed loop (by appending the first vertex at the end if necessary)
+                if not np.array_equal(vertices_2d[0], vertices_2d[-1]):
+                    vertices_2d = np.vstack([vertices_2d, vertices_2d[0]])
+
+                # Create LineString objects for each edge (i.e., face of the convex hull in 2D)
+                edges = []
+                for i in range(len(vertices_2d) - 1):
+                    edge = LineString([vertices_2d[i], vertices_2d[i + 1]])
+                    edges.append(edge)
+
+                # Merge all line segments into a single polygon
+                merged_polygon = unary_union(edges)
+                if isinstance(merged_polygon, Polygon):
+                    polygon = merged_polygon
+                else:
+                    # If we get multiple separate polygons, merge them into one (using convex hull if needed)
+                    polygon = merged_polygon.convex_hull
+
+                # Filter points inside the polygon (keep the 3D structure)
+                filtered_points = []
+                filtered_colors = []
+                for i, point in enumerate(points_2d):
+                    if polygon.contains(Point(point)):
+                        # Append the original 3D point and corresponding color (RGB)
+                        filtered_points.append(points[i])
+                        filtered_colors.append(colors[i])
+
+                if not filtered_points:
+                    self.add_log_message("No points found inside the polygon.")
+                    continue
+
+                # Create a new point cloud from filtered points, restoring Z-coordinate
+                new_point_cloud = o3d.geometry.PointCloud()
+                new_point_cloud.points = o3d.utility.Vector3dVector(np.array(filtered_points))
+                new_point_cloud.colors = o3d.utility.Vector3dVector(np.array(filtered_colors))  # Add RGB values
+
+                # Generate the child name for the new point cloud
+                base_child_name = "pointcloud_in_3dhull"
+                child_name = base_child_name
+
+                # Check if a point cloud with this name already exists under the parent
+                parent_name = None
+                for item in selected_items:
+                    # if item.text(0) == point_cloud.name:
+                    if item.text(0) == child_name:
+                        parent_name = item.parent().text(0) if item.parent() else None
+                        break
+
+                # If parent_name is None (which should not happen in this case), fallback to the first point cloud's parent
+                if parent_name is None:
+                    parent_name = selected_items[0].parent().text(0) if selected_items[
+                        0].parent() else "Filtered Point Clouds"
+
+                # Ensure unique child name by checking if it exists under the parent
+                existing_children = self.data.get(parent_name, {}).keys()
+                counter = 1
+                while child_name in existing_children:
+                    child_name = f"{base_child_name}_{counter}"
+                    counter += 1
+
+                # Add the new point cloud to the tree and data using add_child_to_tree_and_data
+                self.add_child_to_tree_and_data(parent_name, child_name, new_point_cloud)
+
+                self.add_log_message(f"Added filtered point cloud '{child_name}' under '{parent_name}'.")
+
+
+    # Visualisation
 
     def change_point_cloud_color(self, item):
         """Change the color of a point cloud."""
@@ -1002,284 +1285,6 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.add_log_message(f"Failed to add point cloud: {str(e)}")
 
-    def apply_spatial_transformation(self):
-        """Applies spatial transformation to selected point clouds."""
-        selected_items = self.selected_items()
-
-        # Collect selected point clouds
-        selected_point_clouds = []
-        for item in selected_items:
-            parent_name = item.parent().text(0) if item.parent() else None
-            child_name = item.text(0)
-            key = (parent_name, child_name)
-
-            if key in self.o3d_viewer.items:
-                o3d_item = self.o3d_viewer.items[key]
-                if isinstance(o3d_item, o3d.geometry.PointCloud):
-                    selected_point_clouds.append((key, o3d_item))
-
-        if not selected_point_clouds:
-            self.add_log_message("No point clouds selected for transformation.")
-            return
-
-        # Show the transformation dialog
-        dialog = TransformationDialog(self)
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            translation, rotation, mirroring = dialog.get_transformation_parameters()
-
-            for (key, point_cloud) in selected_point_clouds:
-                try:
-                    # Validate point cloud
-                    if not hasattr(point_cloud, 'points') or len(point_cloud.points) == 0:
-                        self.add_log_message(f"Point cloud '{key[1]}' is empty or invalid. Skipping transformation.")
-                        continue
-
-                    self.add_log_message(f"Attempting to translate point cloud with translation: {translation}")
-                    if not isinstance(translation, (list, tuple)) or len(translation) != 3:
-                        self.add_log_message(f"Invalid translation vector: {translation}. Skipping translation.")
-                        continue
-
-                    # Apply transformations manually
-                    if any(value != 0 for value in translation):
-                        self.add_log_message(f"Applying manual translation {translation} to point cloud '{key[1]}'.")
-                        try:
-                            # Convert points to a NumPy array, apply translation, and assign back
-                            points = np.asarray(point_cloud.points)  # Convert to NumPy array
-                            points += np.array(translation)  # Apply translation
-                            point_cloud.points = o3d.utility.Vector3dVector(points)  # Assign back
-                        except Exception as e:
-                            self.add_log_message(f"Failed to apply manual translation to '{key[1]}': {e}")
-                            continue
-
-                    if any(rotation):
-                        self.add_log_message(f"Applying rotation {rotation} to point cloud '{key[1]}'.")
-                        rotation_radians = [np.radians(angle) for angle in rotation]
-                        rotation_matrix = o3d.geometry.get_rotation_matrix_from_xyz(rotation_radians)
-                        point_cloud.rotate(rotation_matrix, center=point_cloud.get_center())
-
-                    if any(mirroring):
-                        self.add_log_message(f"Applying mirroring {mirroring} to point cloud '{key[1]}'.")
-                        mirror_matrix = np.eye(4)
-                        mirror_matrix[0, 0] = -1 if mirroring[0] else 1
-                        mirror_matrix[1, 1] = -1 if mirroring[1] else 1
-                        mirror_matrix[2, 2] = -1 if mirroring[2] else 1
-                        point_cloud.transform(mirror_matrix)
-
-                    # Remove and re-add the point cloud to refresh the viewer
-                    parent_name, child_name = key
-                    self.add_log_message(f"Removing point cloud '{child_name}' from viewer.")
-                    try:
-                        self.o3d_viewer.remove_item(parent_name, child_name)
-                        time.sleep(0.1)  # Add delay to allow viewer to process removal
-                        self.add_log_message(f"Re-adding point cloud '{child_name}' to viewer.")
-                        self.o3d_viewer.add_item(point_cloud, parent_name, child_name)
-                        time.sleep(0.1)  # Add delay to allow viewer to process re-addition
-                    except Exception as e:
-                        self.add_log_message(f"Failed to update viewer for '{child_name}': {e}")
-                        continue
-
-                    # Add log message
-                    self.add_log_message(f"Transformed point cloud '{key[1]}' under '{key[0]}'.")
-
-                except Exception as e:
-                    self.add_log_message(f"Failed to transform point cloud '{key[1]}': {e}")
-
-            # Refresh the Open3D viewer
-            self.o3d_viewer.update_viewer()
-
-    def apply_transformations(self, mesh, transform_settings):
-        """Apply transformations to the mesh based on settings."""
-        self.add_log_message("Applying transformations...")
-        if "scale" in transform_settings:
-            scale_factor = transform_settings["scale"]
-            mesh.scale(scale_factor, center=mesh.get_center())
-        if "rotation" in transform_settings:
-            rotation_matrix = transform_settings["rotation"]  # Should be a 3x3 matrix
-            mesh.rotate(rotation_matrix, center=mesh.get_center())
-        if "translation" in transform_settings:
-            translation_vector = transform_settings["translation"]
-            mesh.translate(translation_vector)
-
-    def filter_points_by_hull_footprint(self):
-        """Filters points from a selected Open3D point cloud that fall within the footprint of a selected line set (3D convex hull)."""
-        selected_items = self.selected_items()
-
-        # Separate selected point clouds and line sets
-        selected_point_clouds = []
-        selected_line_sets = []
-        for item in selected_items:
-            parent_name = item.parent().text(0) if item.parent() else None
-            child_name = item.text(0)
-            key = (parent_name, child_name)
-
-            if key in self.o3d_viewer.items:
-                o3d_item = self.o3d_viewer.items[key]
-                if isinstance(o3d_item, o3d.geometry.PointCloud):
-                    selected_point_clouds.append(o3d_item)
-                elif isinstance(o3d_item, o3d.geometry.LineSet):
-                    selected_line_sets.append(o3d_item)
-
-        if not selected_point_clouds or not selected_line_sets:
-            self.add_log_message("At least one point cloud and one line set must be selected.")
-            return
-
-        # Iterate through selected point clouds and line sets
-        for point_cloud in selected_point_clouds:
-            for line_set in selected_line_sets:
-                # Flatten the point cloud (remove z-coordinate)
-                points = np.asarray(point_cloud.points)
-                colors = np.asarray(point_cloud.colors)  # Get RGB values
-                points_2d = points[:, :2]
-
-                # Extract edges from the line set
-                lines = np.asarray(line_set.lines)
-                vertices = np.asarray(line_set.points)
-                vertices_2d = vertices[:, :2]
-
-                # Ensure the line set forms a closed loop (by appending the first vertex at the end if necessary)
-                if not np.array_equal(vertices_2d[0], vertices_2d[-1]):
-                    vertices_2d = np.vstack([vertices_2d, vertices_2d[0]])
-
-                # Create LineString objects for each edge (i.e., face of the convex hull in 2D)
-                edges = []
-                for i in range(len(vertices_2d) - 1):
-                    edge = LineString([vertices_2d[i], vertices_2d[i + 1]])
-                    edges.append(edge)
-
-                # Merge all line segments into a single polygon
-                merged_polygon = unary_union(edges)
-                if isinstance(merged_polygon, Polygon):
-                    polygon = merged_polygon
-                else:
-                    # If we get multiple separate polygons, merge them into one (using convex hull if needed)
-                    polygon = merged_polygon.convex_hull
-
-                # Filter points inside the polygon (keep the 3D structure)
-                filtered_points = []
-                filtered_colors = []
-                for i, point in enumerate(points_2d):
-                    if polygon.contains(Point(point)):
-                        # Append the original 3D point and corresponding color (RGB)
-                        filtered_points.append(points[i])
-                        filtered_colors.append(colors[i])
-
-                if not filtered_points:
-                    self.add_log_message("No points found inside the polygon.")
-                    continue
-
-                # Create a new point cloud from filtered points, restoring Z-coordinate
-                new_point_cloud = o3d.geometry.PointCloud()
-                new_point_cloud.points = o3d.utility.Vector3dVector(np.array(filtered_points))
-                new_point_cloud.colors = o3d.utility.Vector3dVector(np.array(filtered_colors))  # Add RGB values
-
-                # Generate the child name for the new point cloud
-                base_child_name = "pointcloud_in_3dhull"
-                child_name = base_child_name
-
-                # Check if a point cloud with this name already exists under the parent
-                parent_name = None
-                for item in selected_items:
-                    # if item.text(0) == point_cloud.name:
-                    if item.text(0) == child_name:
-                        parent_name = item.parent().text(0) if item.parent() else None
-                        break
-
-                # If parent_name is None (which should not happen in this case), fallback to the first point cloud's parent
-                if parent_name is None:
-                    parent_name = selected_items[0].parent().text(0) if selected_items[
-                        0].parent() else "Filtered Point Clouds"
-
-                # Ensure unique child name by checking if it exists under the parent
-                existing_children = self.data.get(parent_name, {}).keys()
-                counter = 1
-                while child_name in existing_children:
-                    child_name = f"{base_child_name}_{counter}"
-                    counter += 1
-
-                # Add the new point cloud to the tree and data using add_child_to_tree_and_data
-                self.add_child_to_tree_and_data(parent_name, child_name, new_point_cloud)
-
-                self.add_log_message(f"Added filtered point cloud '{child_name}' under '{parent_name}'.")
-
-    def open_dbscan_dialog(self):
-
-        # Retrieve selected items from the tree
-        selected_items = self.selected_items()
-
-        for item in selected_items:
-            # Determine the file name and check hierarchy
-            if item.parent():  # If it's a child item
-                parent_name = item.parent().text(0)  # Parent holds the file name
-                child_name = item.text(0)  # Child text represents the cloud type
-            else:  # If it's a top-level (parent) item
-                self.add_log_message("Top-level items cannot be clustered directly.")
-                continue
-
-            # Retrieve the point cloud data
-            data = self.data.get(parent_name)
-            if not data:
-                self.add_log_message(f"No valid point cloud found for {parent_name}. Skipping.")
-                continue
-            point_cloud = data[child_name]
-
-            # Open the dialog to configure DBSCAN parameters
-            dialog = DBSCANDialog(self)
-            if dialog.exec() != QDialog.DialogCode.Accepted:
-                self.add_log_message("DBSCAN dialog canceled.")
-                continue
-
-            # Retrieve DBSCAN parameters from the dialog
-            eps = dialog.get_eps()
-            min_points = dialog.get_min_points()
-
-            # Perform DBSCAN clustering
-            def perform_dbscan(point_cloud, eps, min_points):
-                # Convert point cloud to NumPy array
-                points = np.asarray(point_cloud.points)
-
-                # Perform DBSCAN
-                labels = np.array(o3d.geometry.PointCloud.cluster_dbscan(
-                    point_cloud, eps=eps, min_points=min_points, print_progress=True
-                ))
-
-                return labels
-
-            labels = perform_dbscan(point_cloud, eps, min_points)
-
-            # Check if DBSCAN was successful
-            if labels is None or len(labels) == 0:
-                self.add_log_message(f"DBSCAN failed for {parent_name}.")
-                continue
-
-            max_label = labels.max()
-            self.add_log_message(f"DBSCAN found {max_label + 1} clusters for {child_name}.")
-
-            # Loop through each cluster (label)
-            for label in range(max_label + 1):
-                # Select the points belonging to the current cluster
-                cluster_indices = np.where(labels == label)[0]
-                cluster_points = point_cloud.select_by_index(cluster_indices)
-
-                # Name the cluster with a suffix based on the cluster label
-                cluster_name = f"{child_name}_Cluster_{label}"
-
-                # Retain the original colors of the cluster points
-                original_colors = np.asarray(point_cloud.colors)[cluster_indices]  # Extract original RGB colors
-                cluster_points.colors = o3d.utility.Vector3dVector(original_colors)  # Assign original colors
-
-                # Add the cluster to the data dictionary
-                self.data[parent_name][cluster_name] = cluster_points
-
-                # Add the cluster to the tree and viewer
-                self.add_child_to_tree_and_data(parent_name, cluster_name, cluster_points)
-
-                # Add the cluster to the viewer
-                self.o3d_viewer.add_item(cluster_points, parent_name, cluster_name)
-                self.add_log_message(f"Cluster {label} added: {cluster_name}")
-
-            # Update the viewer
-            self.o3d_viewer.update_viewer()
-            self.add_log_message("Viewer updated with DBSCAN clusters.")
 
 
     #####
