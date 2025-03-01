@@ -36,7 +36,7 @@ from write_funcs import (
 from tools import (
     convexhull3d, filter_points_by_distance, sampling,
     merge_items, boundingbox3d, poisson_surface_reconstruction,
-    substitute_points, apply_spatial_transformation
+    substitute_points, apply_spatial_transformation, dbscan_analysis
 )
 # from normals import ball_pivoting_triangulation
 from normals import(
@@ -303,7 +303,7 @@ class MainWindow(QMainWindow):
         dbscan_action = QAction("DBSCAN Clustering", self)
         dbscan_action.setToolTip("Perform DBSCAN clustering on the pointcloud")
         dbscan_action.setEnabled(True)
-        dbscan_action.triggered.connect(self.open_dbscan_dialog)
+        dbscan_action.triggered.connect(lambda: dbscan_analysis(self, self.selected_items()))
         analysis_menu.addAction(dbscan_action)
 
         poisson_surface_reconstruction_action = QAction("Poisson Surface Reconstruction", self)
@@ -677,85 +677,7 @@ class MainWindow(QMainWindow):
     # Tools
 
 
-    def open_dbscan_dialog(self):
 
-        # Retrieve selected items from the tree
-        selected_items = self.selected_items()
-
-        for item in selected_items:
-            # Determine the file name and check hierarchy
-            if item.parent():  # If it's a child item
-                parent_name = item.parent().text(0)  # Parent holds the file name
-                child_name = item.text(0)  # Child text represents the cloud type
-            else:  # If it's a top-level (parent) item
-                self.add_log_message("Top-level items cannot be clustered directly.")
-                continue
-
-            # Retrieve the point cloud data
-            data = self.data.get(parent_name)
-            if not data:
-                self.add_log_message(f"No valid point cloud found for {parent_name}. Skipping.")
-                continue
-            point_cloud = data[child_name]
-
-            # Open the dialog to configure DBSCAN parameters
-            dialog = DBSCANDialog(self)
-            if dialog.exec() != QDialog.DialogCode.Accepted:
-                self.add_log_message("DBSCAN dialog canceled.")
-                continue
-
-            # Retrieve DBSCAN parameters from the dialog
-            eps = dialog.get_eps()
-            min_points = dialog.get_min_points()
-
-            # Perform DBSCAN clustering
-            def perform_dbscan(point_cloud, eps, min_points):
-                # Convert point cloud to NumPy array
-                points = np.asarray(point_cloud.points)
-
-                # Perform DBSCAN
-                labels = np.array(o3d.geometry.PointCloud.cluster_dbscan(
-                    point_cloud, eps=eps, min_points=min_points, print_progress=True
-                ))
-
-                return labels
-
-            labels = perform_dbscan(point_cloud, eps, min_points)
-
-            # Check if DBSCAN was successful
-            if labels is None or len(labels) == 0:
-                self.add_log_message(f"DBSCAN failed for {parent_name}.")
-                continue
-
-            max_label = labels.max()
-            self.add_log_message(f"DBSCAN found {max_label + 1} clusters for {child_name}.")
-
-            # Loop through each cluster (label)
-            for label in range(max_label + 1):
-                # Select the points belonging to the current cluster
-                cluster_indices = np.where(labels == label)[0]
-                cluster_points = point_cloud.select_by_index(cluster_indices)
-
-                # Name the cluster with a suffix based on the cluster label
-                cluster_name = f"{child_name}_Cluster_{label}"
-
-                # Retain the original colors of the cluster points
-                original_colors = np.asarray(point_cloud.colors)[cluster_indices]  # Extract original RGB colors
-                cluster_points.colors = o3d.utility.Vector3dVector(original_colors)  # Assign original colors
-
-                # Add the cluster to the data dictionary
-                self.data[parent_name][cluster_name] = cluster_points
-
-                # Add the cluster to the tree and viewer
-                self.add_child_to_tree_and_data(parent_name, cluster_name, cluster_points)
-
-                # Add the cluster to the viewer
-                self.o3d_viewer.add_item(cluster_points, parent_name, cluster_name)
-                self.add_log_message(f"Cluster {label} added: {cluster_name}")
-
-            # Update the viewer
-            self.o3d_viewer.update_viewer()
-            self.add_log_message("Viewer updated with DBSCAN clusters.")
 
     def filter_points_by_hull_footprint(self):
         """Filters points from a selected Open3D point cloud that fall within the footprint of a selected line set (3D convex hull)."""
