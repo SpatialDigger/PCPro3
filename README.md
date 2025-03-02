@@ -62,8 +62,46 @@ For questions or suggestions, reach out at garynobles20@gmail.com or open an iss
 
 ---
 
+
+## Version [0.1.3]
+**Release Date:** [Under Development]
+
+### New Features:
+- [Feature 1 description]
+- [Feature 2 description]
+- [Feature 3 description]
+
+### Bug Fixes:
+- [Bug fix 1 description]
+- [Bug fix 2 description]
+
+### Performance Improvements:
+- [Performance improvement 1 description]
+- [Performance improvement 2 description]
+
+### Compatibility Updates:
+- [Compatibility update description]
+
+### Known Issues:
+- [Known issue description]
+- [Known issue description]
+
+### Upgrade Notes:
+- [Upgrade instruction or notes for users]
+
+### Coming Soon:
+- [Feature or update planned for next version]
+
+### Deprecation Notices:
+- [Deprecated feature or upcoming removal notice]
+
+### Special Thanks:
+- [Contributor name] for [contribution description]
+
+---
+
 ## Version 0.1.2 
-**Release Date:** [In development]
+**Release Date:** 2025-03-02 [Current]
 
 ### New Features:
 - Added option to customize point cloud colors and revert to the default colors
@@ -80,35 +118,21 @@ For questions or suggestions, reach out at garynobles20@gmail.com or open an iss
 - Resolved issue where point cloud colours weren't saving on export
 - Mesh can now display properties
 
-### Performance Improvements:
-- None
-
-### Compatibility Updates:
-- None
-
 ### Known Issues:
 - #1 Convexhull3D filter assigning filtered pointcloud to the wrong pointcloud
 - #20 Crashes when getting properties for a mesh
 - #24 Mesh cannot change colour 
 - Mesh properties takes a while to load
 
-### Upgrade Notes:
-- None
-### Coming Soon:
-- None
-
-### Deprecation Notices:
-- None
-
 ### Special Thanks:
-- Catherine Scott for testing and raising enhancement requests
+- Catherine Scott for raising enhancement requests
 - Christopher Roosevelt for raising enhancement requests
 
 ---
 
 
 ## Version 0.1.1
-Release Date: 25th February 2025 [Current]
+Release Date: 2025-02-25
 ### New Features:
 - Added ability to compute normals
 - Added option to invert normals
@@ -121,7 +145,7 @@ Release Date: 25th February 2025 [Current]
 ---
 
 ## Version 0.1.0
-Release Date: 19th February 2025
+Release Date: 2025-02-19
 ### New Features:
 - PCPro launched
 - Initial release with core features
