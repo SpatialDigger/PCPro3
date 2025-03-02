@@ -244,7 +244,7 @@ Once surface reconstruction is complete, the final model can be exported.
 
 ---
 
-## **Conclusion**  
+## **Summary**  
 
 This example demonstrates how to process two point clouds and generate a solid fill between them using:  
 ✔️ Distance-based filtering  
