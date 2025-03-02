@@ -741,95 +741,166 @@ def filter_points_by_hull_footprint(self, selected_items):
 
 ######
 # Tools in production
-def substitute_points(self, selected_items):
-    print("Opening substitute points dialog...")
+import numpy as np
+import open3d as o3d
+from scipy.spatial import cKDTree
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QComboBox, QDoubleSpinBox, QPushButton, QHBoxLayout
 
-    # Open the dialog
-    dialog = TopBaseSelectionDialog(selected_items)
-    if dialog.exec() == QDialog.DialogCode.Accepted:
-        top_cloud_name, base_cloud_name, tolerance = dialog.get_selected_clouds_and_tolerance()
+class PointCloudSelectionDialog(QDialog):
+    def __init__(self, parent, data):
+        super().__init__(parent)
+        self.setWindowTitle("Select Point Clouds for Merging")
 
-        if tolerance is None:
-            self.add_log_message("Invalid tolerance value. Operation canceled.")
-            return
+        layout = QVBoxLayout()
 
-        # Determine parent name for accessing the data
-        parent_name = selected_items[0].parent().text(0) if selected_items[0].parent() else "Unknown Parent"
+        # Parent and Cloud selection for Cloud 1
+        layout.addWidget(QLabel("Select Parent & Base Point Cloud (kept unchanged):"))
+        self.parent1_combo = QComboBox()
+        self.parent1_combo.addItems(data.keys())  # Parent names
+        layout.addWidget(self.parent1_combo)
 
-        # Retrieve the selected point clouds
-        top_cloud = self.data.get(parent_name, {}).get(top_cloud_name)
-        base_cloud = self.data.get(parent_name, {}).get(base_cloud_name)
+        self.cloud1_combo = QComboBox()
+        layout.addWidget(self.cloud1_combo)
 
-        if top_cloud is None or base_cloud is None:
-            self.add_log_message(f"Error: Could not retrieve point clouds '{top_cloud_name}' or '{base_cloud_name}'.")
-            return
+        # Parent and Cloud selection for Cloud 2
+        layout.addWidget(QLabel("Select Parent & Secondary Point Cloud (filtered & merged):"))
+        self.parent2_combo = QComboBox()
+        self.parent2_combo.addItems(data.keys())  # Parent names
+        layout.addWidget(self.parent2_combo)
 
-        # Convert point cloud points to NumPy arrays
-        top_points = np.asarray(top_cloud.points, dtype=np.float32)
-        base_points = np.asarray(base_cloud.points, dtype=np.float32)
+        self.cloud2_combo = QComboBox()
+        layout.addWidget(self.cloud2_combo)
 
-        if len(top_points) == 0 or len(base_points) == 0:
-            self.add_log_message("Error: One or both point clouds are empty.")
-            return
+        # Update cloud dropdowns based on selected parent
+        self.parent1_combo.currentTextChanged.connect(self.update_cloud1_list)
+        self.parent2_combo.currentTextChanged.connect(self.update_cloud2_list)
 
-        if not np.isfinite(top_points).all() or not np.isfinite(base_points).all():
-            self.add_log_message("Error: One or both clouds contain invalid points.")
-            return
+        # Set default cloud lists
+        self.update_cloud1_list()
+        self.update_cloud2_list()
 
-        # Build KDTree for the top point cloud
-        kdtree_top = o3d.geometry.KDTreeFlann(top_cloud)
+        # Tolerance input
+        layout.addWidget(QLabel("XY Tolerance for Merging (units):"))
+        self.tolerance_spin = QDoubleSpinBox()
+        self.tolerance_spin.setRange(0.001, 100.0)
+        self.tolerance_spin.setDecimals(3)
+        self.tolerance_spin.setValue(0.5)  # Default
+        layout.addWidget(self.tolerance_spin)
 
-        # Prepare lists for substituted and remaining points
-        substituted_points = []
-        remaining_base_points = []
+        # OK & Cancel buttons
+        button_layout = QHBoxLayout()
+        self.ok_button = QPushButton("OK")
+        self.ok_button.clicked.connect(self.accept)
+        button_layout.addWidget(self.ok_button)
 
-        for i, base_point in enumerate(base_points):
-            print(f"Processing point {i}: {base_point}")  # Debugging
-            base_point = np.asarray(base_point, dtype=np.float64)  # Ensure correct format
-            if base_point.shape != (3,):
-                print(f"Skipping invalid base point {i}: {base_point}")
-                continue
+        self.cancel_button = QPushButton("Cancel")
+        self.cancel_button.clicked.connect(self.reject)
+        button_layout.addWidget(self.cancel_button)
 
-            if not np.isfinite(base_point).all():
-                print(f"Skipping non-finite base point {i}: {base_point}")
-                continue
+        layout.addLayout(button_layout)
+        self.setLayout(layout)
 
-            try:
-                # Find the nearest neighbor in the top cloud
-                [success, idx, _] = kdtree_top.search_knn_vector_3d(base_point, 1)
-                if success <= 0:
-                    print(f"No neighbor found for base point {i}. Adding to remaining points.")
-                    remaining_base_points.append(base_point)
-                    continue
+    def update_cloud1_list(self):
+        parent_name = self.parent1_combo.currentText()
+        self.cloud1_combo.clear()
+        if parent_name:
+            self.cloud1_combo.addItems(self.parent().data.get(parent_name, {}).keys())
 
-                # Check the Z-coordinate difference
-                nearest_top_point = top_points[idx[0]]
-                print(f"Nearest top point for base point {i}: {nearest_top_point}")  # Debugging
+    def update_cloud2_list(self):
+        parent_name = self.parent2_combo.currentText()
+        self.cloud2_combo.clear()
+        if parent_name:
+            self.cloud2_combo.addItems(self.parent().data.get(parent_name, {}).keys())
 
-                if base_point[2] > nearest_top_point[2] + tolerance:
-                    print(f"Base point {i} is above the top point by tolerance. Substituting.")
-                    substituted_points.append(base_point)
-                else:
-                    print(f"Base point {i} is not above the top point. Keeping in remaining.")
-                    remaining_base_points.append(base_point)
+    def get_selected_values(self):
+        return (
+            self.parent1_combo.currentText(),
+            self.cloud1_combo.currentText(),
+            self.parent2_combo.currentText(),
+            self.cloud2_combo.currentText(),
+            self.tolerance_spin.value()
+        )
 
-            except Exception as e:
-                print(f"Error during KDTree search for base point {i}: {e}")
-                remaining_base_points.append(base_point)
+def substitute_points(self):
+    print("Opening merge points dialog...")
 
-        # Create new point clouds with the results
-        updated_top_cloud = top_cloud.clone()
-        updated_top_cloud.points = o3d.utility.Vector3dVector(np.vstack([top_points, substituted_points]))
+    if not self.data:
+        self.add_log_message("Error: No point cloud data available.")
+        return
 
-        remaining_base_cloud = base_cloud.clone()
-        remaining_base_cloud.points = o3d.utility.Vector3dVector(np.array(remaining_base_points))
+    # Open selection dialog for choosing parents and point clouds
+    dialog = PointCloudSelectionDialog(self, self.data)
+    if dialog.exec() != QDialog.DialogCode.Accepted:
+        self.add_log_message("Merge operation canceled.")
+        return
 
-        # Add the updated clouds to the data and tree
-        self.add_child_to_tree_and_data(parent_name, f"{top_cloud_name}_updated", updated_top_cloud)
-        self.add_child_to_tree_and_data(parent_name, f"{base_cloud_name}_remaining", remaining_base_cloud)
+    # Get the selected parent and point clouds from the dialog
+    parent1, cloud1_name, parent2, cloud2_name, tolerance = dialog.get_selected_values()
 
-        # Log completion message
-        self.add_log_message(f"Substitution completed: '{top_cloud_name}_updated' and '{base_cloud_name}_remaining' created.")
+    # Retrieve the selected point clouds
+    cloud1 = self.data.get(parent1, {}).get(cloud1_name)
+    cloud2 = self.data.get(parent2, {}).get(cloud2_name)
+
+    if cloud1 is None or cloud2 is None:
+        self.add_log_message(f"Error: Could not retrieve '{cloud1_name}' from '{parent1}' or '{cloud2_name}' from '{parent2}'.")
+        return
+
+    # Convert point cloud points to NumPy arrays
+    cloud1_points = np.asarray(cloud1.points, dtype=np.float32)
+    cloud2_points = np.asarray(cloud2.points, dtype=np.float32)
+
+    # Get the RGB color values from the point clouds
+    cloud1_colors = np.asarray(cloud1.colors, dtype=np.float32) if len(np.asarray(cloud1.colors)) > 0 else np.zeros_like(cloud1_points)
+    cloud2_colors = np.asarray(cloud2.colors, dtype=np.float32) if len(np.asarray(cloud2.colors)) > 0 else np.zeros_like(cloud2_points)
+
+    if len(cloud1_points) == 0 or len(cloud2_points) == 0:
+        self.add_log_message("Error: One or both point clouds are empty.")
+        return
+
+    if not np.isfinite(cloud1_points).all() or not np.isfinite(cloud2_points).all():
+        self.add_log_message("Error: One or both clouds contain invalid points.")
+        return
+
+    # Extract XY coordinates
+    cloud1_xy = cloud1_points[:, :2]
+    cloud2_xy = cloud2_points[:, :2]
+
+    # Build a KDTree using cloud1 in XY space
+    kdtree_xy = cKDTree(cloud1_xy)
+
+    # Find nearest neighbor distances for cloud2 points
+    distances, _ = kdtree_xy.query(cloud2_xy, k=1)
+
+    # Identify points in cloud2 that are farther than the tolerance
+    non_overlapping_mask = distances > tolerance
+    non_overlapping_points = cloud2_points[non_overlapping_mask]
+    non_overlapping_colors = cloud2_colors[non_overlapping_mask]
+
+    # Merge the non-overlapping points and their colors with cloud1
+    merged_points = np.vstack([cloud1_points, non_overlapping_points])
+    merged_colors = np.vstack([cloud1_colors, non_overlapping_colors])
+
+    # Create a new merged point cloud
+    merged_cloud = o3d.geometry.PointCloud()
+    merged_cloud.points = o3d.utility.Vector3dVector(merged_points)
+    merged_cloud.colors = o3d.utility.Vector3dVector(merged_colors)
+
+    # Ensure a unique name for the merged point cloud
+    base_name = "pointcloud_merged"
+    merged_cloud_name = base_name
+    counter = 1
+    # Ensure the new name is unique under a new parent (default "Merged Point Clouds")
+    parent_name = "Merged Point Clouds"
+    while merged_cloud_name in self.data.get(parent_name, {}):
+        merged_cloud_name = f"{base_name}_{counter}"
+        counter += 1
+
+    # Add the new merged point cloud to the tree and data under the new parent
+    self.add_child_to_tree_and_data(parent_name, merged_cloud_name, merged_cloud)
+
+    # Log completion of the merge operation
+    self.add_log_message(f"Merge completed: '{merged_cloud_name}' created under '{parent_name}' with {len(merged_points)} points.")
+
 
 def boundingbox3d(self, selected_items): # todo not working
     print("Not opening ConvexHull dialog...")  # Debugging

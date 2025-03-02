@@ -283,8 +283,8 @@ class MainWindow(QMainWindow):
 
         substitute_points_action = QAction("Substitute", self)
         substitute_points_action.setToolTip("Substitute Points")
-        substitute_points_action.setEnabled(False)
-        substitute_points_action.triggered.connect(lambda: substitute_points(self, self.selected_items()))
+        substitute_points_action.setEnabled(True)
+        substitute_points_action.triggered.connect(lambda: substitute_points(self))
         filters_menu.addAction(substitute_points_action)
 
         fill_holes_action = QAction("delaunay3d", self)

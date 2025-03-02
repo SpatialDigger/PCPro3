@@ -72,6 +72,9 @@ For questions or suggestions, reach out at garynobles20@gmail.com or open an iss
 - Introduced "About" and "Keyboard Shortcuts" options in the menu
 - Added the ability to change the pointcloud colours
 - Added the ability to revert colours back to their original state
+- Mesh properties
+- Mesh Volume calculation in its properties
+- Added the Pointcloud Substitution function
 
 ### Bug Fixes:
 - Resolved issue where point cloud colours weren't saving on export
@@ -86,14 +89,13 @@ For questions or suggestions, reach out at garynobles20@gmail.com or open an iss
 ### Known Issues:
 - #1 Convexhull3D filter assigning filtered pointcloud to the wrong pointcloud
 - #20 Crashes when getting properties for a mesh
+- #24 Mesh cannot change colour 
 - Mesh properties takes a while to load
-- Mesh cannot change colour
 
 ### Upgrade Notes:
 - None
 ### Coming Soon:
-- Mesh Volume calculation
-- Mesh properties fix
+- None
 
 ### Deprecation Notices:
 - None
