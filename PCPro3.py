@@ -16,7 +16,7 @@ from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QTreeWidget, QAbstractItemView,
     QApplication, QAction, QMenu,
     QFileDialog, QColorDialog, QTreeWidgetItem, QDialog, QAction, QMessageBox,
-    QLabel, QPushButton
+    QLabel, QPushButton, QSizePolicy
 )
 from PyQt5.QtCore import Qt, QTimer, QPoint, QUrl
 from viewer import Open3DViewer
@@ -52,25 +52,53 @@ from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtGui import QDesktopServices
 
 
+from PyQt5.QtWidgets import (
+    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QTreeWidget,
+    QAbstractItemView, QLabel, QSizePolicy, QSplitter
+)
+from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtGui import QPixmap
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Pointcloud Processor 0.1.2")
+
+        # Set initial window size
+        # self.setGeometry(100, 100, 800, 600)
+
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
 
         layout = QVBoxLayout()
         self.central_widget.setLayout(layout)
 
+        # QSplitter to manage top and bottom sections
+        self.splitter = QSplitter(Qt.Vertical)
+        layout.addWidget(self.splitter)
+
+        # Create the top panel widget (for your tree view)
+        self.top_panel = QWidget()
+        top_layout = QVBoxLayout()
+        self.top_panel.setLayout(top_layout)
+
+        # Tree widget for datasets
         self.tree = QTreeWidget()
-        self.tree.setHeaderLabels(["Datasets"])
-
-        # Set multi-selection mode
+        self.tree.setHeaderLabels(["Contents"])
         self.tree.setSelectionMode(QAbstractItemView.MultiSelection)
-
         self.tree.itemChanged.connect(self.on_item_changed)
-        layout.addWidget(self.tree)
+        top_layout.addWidget(self.tree)
 
+        # Add the top panel to the splitter
+        self.splitter.addWidget(self.top_panel)
+
+        # Create the bottom panel widget (for the image)
+        self.create_bottom_panel()
+
+        # Set initial sizes of the top and bottom panels
+        self.splitter.setSizes([self.height() * 60 // 100, self.height() * 40 // 100])
+
+        # Initialize other variables and setups
         self.data = {}
         self.original_colors = {}
 
@@ -85,15 +113,54 @@ class MainWindow(QMainWindow):
 
         self.translation_values = {'x': 0, 'y': 0, 'z': 0}
 
-        # Connect context menu policy for right-click
         self.tree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.tree.customContextMenuRequested.connect(self.show_right_click_menu)
 
-        self.coordinate_frame_visible = False  # Track visibility
-
-        # Meta data storage
+        self.coordinate_frame_visible = False
         self.metadata = {}
         self.original_colors = {}
+
+    def create_bottom_panel(self):
+        """Creates a bottom panel that holds an image and resizes dynamically."""
+        bottom_panel = QWidget()
+        bottom_layout = QHBoxLayout()
+        bottom_panel.setLayout(bottom_layout)
+
+        # Create an image label to display the image
+        self.image_label = QLabel()
+        self.image_label.setAlignment(Qt.AlignCenter)
+        self.image_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        # Load and set an image (replace with actual image path)
+        pixmap = QPixmap(r"C:\Users\garyn\PycharmProjects\PCPro3\docs\images\pcpro2.jpg")  # Update with actual image path
+        if not pixmap.isNull():
+            self.update_image(pixmap)
+
+        # Add the image label to the bottom panel layout
+        bottom_layout.addWidget(self.image_label)
+
+        # Add the bottom panel to the splitter
+        self.splitter.addWidget(bottom_panel)
+
+    def resizeEvent(self, event):
+        """Handles resizing to adjust image size dynamically."""
+        super().resizeEvent(event)
+        if not self.image_label.pixmap().isNull():
+            self.update_image(self.image_label.pixmap())
+
+    def update_image(self, pixmap):
+        """Updates the image dynamically with max width of 300 pixels."""
+        max_width = 500
+        height = int(pixmap.height() * (max_width / pixmap.width()))  # Calculate height as an integer
+        scaled_pixmap = pixmap.scaled(
+            max_width,  # Max width
+            height,  # Height as an integer
+            Qt.KeepAspectRatio,
+            Qt.SmoothTransformation
+        )
+        self.image_label.setPixmap(scaled_pixmap)
+
+
 
     #####
     # Menus
@@ -867,6 +934,6 @@ def visualize_pointcloud(pointcloud):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()
-    window.resize(600, 400)
+    window.resize(400, 800)
     window.show()
     sys.exit(app.exec())

@@ -7,6 +7,7 @@ from dialogs_pyqt5 import (
                      )
 from shapely.geometry import Point, Polygon, MultiLineString, LineString
 from shapely.ops import unary_union
+from sklearn.cluster import DBSCAN
 import scipy.spatial
 import trimesh
 from PyQt5.QtWidgets import QApplication, QDialog, QVBoxLayout, QComboBox, QPushButton, QLabel, QDialogButtonBox, QLineEdit, QHBoxLayout
