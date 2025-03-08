@@ -106,6 +106,15 @@ def add_pointcloud(parent, file_path, transform_settings=None):
             "file_name": file_name,
         })
 
+        # Add to the log
+        parent.add_action_to_log(action={
+            f"{parent.data[file_name]['file_name']}":{
+                "File source": file_path,
+                "Coordinate shift": parent.translation_values
+            }
+        })
+
+
         add_log_message(parent, f"Point cloud successfully added for file '{file_name}'.")
     except Exception as e:
         add_log_message(parent, f"Failed to add point cloud: {str(e)}")

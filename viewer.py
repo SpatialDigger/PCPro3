@@ -1,6 +1,8 @@
 import open3d as o3d
 from pprint import pprint
 
+
+
 class Open3DViewer:
     def __init__(self, logger=None, data=None):
         self.vis = o3d.visualization.Visualizer()
@@ -15,6 +17,18 @@ class Open3DViewer:
         self.visible_items = {}  # Track visible point clouds
 
         self.render_option = self.vis.get_render_option()
+
+        self.render_option.background_color = [0.180, 0.180, 0.180]  # Dark gray
+
+        # self.render_option.background_color = [0.678, 0.847, 0.902] # Light Blue
+
+    def update_background_color(self, color):
+        """Update the background color of the Open3D viewer."""
+        if len(color) == 3:
+            self.render_option.background_color = color
+            print(f"Background color updated to: {color}")
+        else:
+            print("Invalid background color.")
 
     def log_message(self, message):
         if self.logger:

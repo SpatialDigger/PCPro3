@@ -1,0 +1,43 @@
+/* Forest Retreat Light Splash Screen */
+#LabelTitle {
+    font-size: 60px;
+    color: #4E2A1C; /* Dark brown, main text */
+}
+
+#LabelDesc {
+    font-size: 30px;
+    color: #6D8E46; /* Sub menu, earthy light green */
+}
+
+#LabelAttribute {
+    font-size: 8px;
+    color: #4E2A1C; /* Dark brown for the attribute text */
+    margin: 20px;
+    text-align: right;
+}
+
+#LabelLoading {
+    font-size: 30px;
+    color: #4E2A1C; /* Loading text in dark brown */
+}
+
+#LabelVersion {
+    font-size: 8px;
+    color: #4E2A1C; /* Version text in dark brown */
+    margin: 20px;
+    text-align: right;
+}
+
+/* Progress Bar */
+QProgressBar {
+    border: 2px solid #6D8E46; /* Lighter green border for the progress bar */
+    border-radius: 5px;
+    text-align: center;
+    font-size: 28px;
+}
+
+QProgressBar::chunk {
+    background-color: #4E2A1C; /* Dark brown for progress bar chunk */
+    width: 2.15px;
+    margin: 0.5px;
+}

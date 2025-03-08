@@ -1,0 +1,45 @@
+#LabelTitle {
+    font-size: 60px;
+    color: #d7801a;
+}
+
+#LabelDesc {
+    font-size: 30px;
+    color: #c2ced1;
+}
+
+#LabelAttribute {
+    font-size: 8px;
+    color: #e8e8eb;
+    margin: 20px;
+    align: right;
+}
+
+#LabelLoading {
+    font-size: 30px;
+    color: #e8e8eb;
+}
+
+#LabelVersion {
+    font-size: 8px;
+    color: #e8e8eb;
+    margin: 20px;
+    align: right;
+}
+
+
+/*Progress Bar*/
+QProgressBar
+{
+    border: 2px solid grey;
+    border-radius: 5px;
+    text-align: center;
+    font-size: 28px;
+}
+
+QProgressBar::chunk
+{
+    background-color: #d7801a;
+    width: 2.15px;
+    margin: 0.5px;
+}

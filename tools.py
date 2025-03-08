@@ -57,6 +57,9 @@ def apply_spatial_transformation(self, selected_items):
                         points = np.asarray(point_cloud.points)  # Convert to NumPy array
                         points += np.array(translation)  # Apply translation
                         point_cloud.points = o3d.utility.Vector3dVector(points)  # Assign back
+
+                        self.add_action_to_log(action={f"{self.data[key[0]]}": {"Translation": translation}})
+
                     except Exception as e:
                         self.add_log_message(f"Failed to apply manual translation to '{key[1]}': {e}")
                         continue
@@ -67,6 +70,8 @@ def apply_spatial_transformation(self, selected_items):
                     rotation_matrix = o3d.geometry.get_rotation_matrix_from_xyz(rotation_radians)
                     point_cloud.rotate(rotation_matrix, center=point_cloud.get_center())
 
+                    self.add_action_to_log(action={f"{self.data[key[0]]}": {"Rotation": rotation}})
+
                 if any(mirroring):
                     self.add_log_message(f"Applying mirroring {mirroring} to point cloud '{key[1]}'.")
                     mirror_matrix = np.eye(4)
@@ -74,6 +79,8 @@ def apply_spatial_transformation(self, selected_items):
                     mirror_matrix[1, 1] = -1 if mirroring[1] else 1
                     mirror_matrix[2, 2] = -1 if mirroring[2] else 1
                     point_cloud.transform(mirror_matrix)
+
+                    self.add_action_to_log(action={f"{self.data[key[0]]}": {"Mirroring": mirroring}})
 
                 # Remove and re-add the point cloud to refresh the viewer
                 parent_name, child_name = key
@@ -96,6 +103,8 @@ def apply_spatial_transformation(self, selected_items):
 
         # Refresh the Open3D viewer
         self.o3d_viewer.update_viewer()
+
+
 
 def convexhull3d(self, selected_items):
     # Retrieve selected items from the tree
@@ -207,6 +216,8 @@ def poisson_surface_reconstruction(self, selected_items):
     self.o3d_viewer.update_viewer()
     self.add_log_message("Viewer updated with Poisson surface reconstruction.")
 
+    self.add_action_to_log(action={f"{self.data[parent_name]}": {"Poisson Surface Reconstruction": {"depth": depth, "width":width, "scale": scale}}})
+
 def filter_points_by_distance(self, selected_items):
     """Filters points from two selected point clouds based on the minimum distance between them."""
 
@@ -270,6 +281,7 @@ def filter_points_by_distance(self, selected_items):
             self.add_child_to_tree_and_data(parent_name, child_name, filtered_pc)
 
             self.add_log_message(f"Added filtered point cloud '{child_name}' under '{parent_name}'.")
+            self.add_action_to_log(action={f"{self.data[parent_name]}": {"Distance filter": {"min_distance": min_distance, "comparison_type": comparison_type}}})
 
 def filter_points_by_distance_logic(pc1, pc2, min_distance, comparison_type):
     """Performs the distance filtering logic between two point clouds and retains RGB values."""
@@ -423,9 +435,9 @@ def sampling(self, selected_items):
 
         # Check for sampling type and handle parameters accordingly
         if sample_type in ["Random Sample", "Regular Sample"]:
-            percentage = dialog.get_percentage()
+            value = dialog.get_percentage()
         elif sample_type == "Voxel Downsample":
-            voxel_size = dialog.get_voxel_size()
+            value = dialog.get_voxel_size()
         else:
             self.add_log_message(f"Invalid sample type: {sample_type}.")
             return
@@ -455,11 +467,11 @@ def sampling(self, selected_items):
             # Perform sampling
             sampled_pc = None
             if sample_type == "Random Sample":
-                sampled_pc = sample_pointcloud_random(point_dataset, percentage)
+                sampled_pc = sample_pointcloud_random(point_dataset, value)
             elif sample_type == "Regular Sample":
-                sampled_pc = sample_pointcloud_regular(point_dataset, percentage)
+                sampled_pc = sample_pointcloud_regular(point_dataset, value)
             elif sample_type == "Voxel Downsample":
-                sampled_pc = sample_pointcloud_voxel(point_dataset, voxel_size)
+                sampled_pc = sample_pointcloud_voxel(point_dataset, value)
             else:
                 self.add_log_message(f"Invalid sample type: {sample_type}. Skipping {parent_name}.")
                 continue
@@ -484,6 +496,9 @@ def sampling(self, selected_items):
             # Log the number of points in the sampled point cloud
             num_sampled_points = len(np.asarray(sampled_pc.points))
             self.add_log_message(f"Sampled pointcloud added: {sampled_file_name}, {num_sampled_points} points.")
+
+            self.add_action_to_log(action={f"{self.data[parent_name]}": {
+                "Distance filter": {"sample_type": sample_type, "Sample value": value, "num_sampled_points": num_sampled_points}}})
 
         # Update the viewer
         self.o3d_viewer.update_viewer()

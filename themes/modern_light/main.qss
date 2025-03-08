@@ -1,0 +1,146 @@
+/* Light Main Theme - Sleek & Modern */
+
+/* General Widget Settings */
+QWidget {
+    background-color: #F5F5F5; /* Light background */
+    color: #2C2C2C; /* Dark text for contrast */
+    font-family: 'Arial', sans-serif; /* Clean font */
+}
+
+/* Main Window Background */
+QMainWindow {
+    background-color: #F5F5F5;
+}
+
+/* Label Text */
+QLabel {
+    color: #2C2C2C; /* Dark text */
+}
+
+/* Header Section */
+QHeaderView::section {
+    background-color: #E0E0E0; /* Slightly darker grey for header */
+    color: #2C2C2C; /* Dark text for header */
+    padding: 5px;
+    border: 1px solid #B0B0B0;
+}
+
+/* Push Button */
+QPushButton {
+    background-color: #DDDDDD; /* Light grey background for buttons */
+    color: #2C2C2C; /* Dark text */
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+}
+
+/* Hover Effect on Button */
+QPushButton:hover {
+    background-color: #CCCCCC; /* Slightly darker grey on hover */
+}
+
+/* Pressed Effect on Button */
+QPushButton:pressed {
+    background-color: #BBBBBB; /* Darker grey when pressed */
+}
+
+/* Text Input */
+QLineEdit, QTextEdit {
+    background-color: #FFFFFF; /* White background for input fields */
+    color: #2C2C2C; /* Dark text in input fields */
+    border: 1px solid #B0B0B0;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+/* Focus Effect on Input */
+QLineEdit:focus, QTextEdit:focus {
+    border-color: #888888; /* Subtle highlight when focused */
+}
+
+/* Status Bar */
+QStatusBar {
+    background-color: #E0E0E0; /* Lighter background for status bar */
+    color: #2C2C2C; /* Dark text in status bar */
+}
+
+/* Menu Bar */
+QMenuBar {
+    background-color: #E0E0E0; /* Light grey background for the menu bar */
+    color: #2C2C2C; /* Dark text in menu bar */
+}
+
+/* Menu Item */
+QMenuBar::item {
+    background-color: transparent;
+    padding: 5px;
+}
+
+/* Menu Item Selected */
+QMenuBar::item:selected {
+    background-color: #B0B0B0; /* Darker background when selected */
+}
+
+/* Menu */
+QMenu {
+    background-color: #E0E0E0; /* Lighter background for menu */
+    color: #2C2C2C; /* Dark text in menu */
+    border: 1px solid #B0B0B0;
+}
+
+/* Menu Item Selected */
+QMenu::item:selected {
+    background-color: #CCCCCC; /* Lighter grey on selection */
+}
+
+/* Scroll Bar */
+QScrollBar:vertical, QScrollBar:horizontal {
+    background: #E0E0E0; /* Lighter background for scrollbars */
+    border: none;
+    width: 10px;
+}
+
+QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+    background: #BBBBBB; /* Medium grey for scrollbar handle */
+    border-radius: 5px;
+}
+
+/* Scrollbar Handle Hover Effect */
+QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover {
+    background: #999999; /* Darker grey on hover */
+}
+
+QScrollBar::add-line, QScrollBar::sub-line {
+    background: none;
+}
+
+/* Tab Widget */
+QTabWidget::pane {
+    border: 1px solid #B0B0B0;
+}
+
+QTabBar::tab {
+    background: #E0E0E0; /* Light grey background for tabs */
+    color: #2C2C2C; /* Dark text in tabs */
+    padding: 5px;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+}
+
+/* Selected Tab */
+QTabBar::tab:selected {
+    background: #B0B0B0; /* Darker grey for selected tab */
+}
+
+/* Progress Bar */
+QProgressBar {
+    background-color: #E0E0E0; /* Light grey background for progress bar */
+    color: #2C2C2C; /* Dark text in progress bar */
+    border: 1px solid #B0B0B0;
+    border-radius: 4px;
+    text-align: center;
+}
+
+QProgressBar::chunk {
+    background-color: #888888; /* Medium grey progress bar chunk */
+}

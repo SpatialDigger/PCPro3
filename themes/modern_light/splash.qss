@@ -1,0 +1,50 @@
+/* Light Theme Splash Screen */
+
+/* Title */
+#LabelTitle {
+    font-size: 60px;
+    color: #2C2C2C; /* Dark text for the main title */
+}
+
+/* Description */
+#LabelDesc {
+    font-size: 30px;
+    color: #888888; /* Lighter grey for sub-description */
+}
+
+/* Attribute */
+#LabelAttribute {
+    font-size: 8px;
+    color: #B0B0B0; /* Subtle grey for attribute text */
+    margin: 20px;
+    text-align: right;
+}
+
+/* Loading Text */
+#LabelLoading {
+    font-size: 30px;
+    color: #B0B0B0; /* Subtle grey for the loading text */
+}
+
+/* Version Text */
+#LabelVersion {
+    font-size: 8px;
+    color: #B0B0B0; /* Subtle grey for version text */
+    margin: 20px;
+    text-align: right;
+}
+
+/* Progress Bar */
+QProgressBar {
+    border: 2px solid #B0B0B0; /* Light border */
+    border-radius: 5px;
+    text-align: center;
+    font-size: 28px;
+    background-color: #F5F5F5; /* Light background for the bar */
+}
+
+QProgressBar::chunk {
+    background-color: #888888; /* Medium grey chunk color for progress */
+    width: 2.15px;
+    margin: 0.5px;
+}

@@ -67,16 +67,22 @@ For questions or suggestions, reach out at garynobles20@gmail.com or open an iss
 **Release Date:** [Under Development]
 
 ### New Features:
-- [Feature 1 description]
-- [Feature 2 description]
-- [Feature 3 description]
+- Updated the theme to the Orange-Black theme, now called Obsidian Flame
+- Added a preferences dialogue
+- Added several themes
+- Added the option to change the 3D Viewer background colour in the preferences
+- Added the splash screen
+- Improved user experience 
+-   CTRL + A
+-   Click in blank space deselects all
+-   SHFT + Click selects a range (only works on parent items)
 
 ### Bug Fixes:
 - [Bug fix 1 description]
 - [Bug fix 2 description]
 
 ### Performance Improvements:
-- [Performance improvement 1 description]
+- Cleaned up the log messages
 - [Performance improvement 2 description]
 
 ### Compatibility Updates:

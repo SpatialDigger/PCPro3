@@ -1,3 +1,4 @@
+import os
 import open3d as o3d
 import numpy as np
 import laspy
@@ -52,22 +53,31 @@ def perform_export(parent, item, file_path):
     """Perform the export based on file format."""
     file_format = file_path.split('.')[-1].lower()
 
+    action = {"Export": f"Exported {file_format} to {file_path}"}
+
     try:
         if file_format == "pcd":
             export_to_pcd(item, file_path)
+            parent.add_to_log(action)
         elif file_format == "las":
             export_to_las(item, file_path)
+            parent.add_to_log(action)
         elif file_format == "xyz":
             export_to_xyz(item, file_path)
+            parent.add_to_log(action)
         elif file_format == "ply":
             export_to_ply(item, file_path)
+            parent.add_to_log(action)
         elif file_format == "geojson":
             export_to_geojson(item, file_path)
+            parent.add_to_log(action)
         else:
             add_log_message(parent, f"Unsupported export format: {file_format}")
             return
 
         add_log_message(parent, f"Exported {file_format.upper()} to {file_path}.")
+        
+
     except Exception as e:
         add_log_message(parent, f"Export failed: {str(e)}")
 
@@ -75,11 +85,13 @@ def export_to_pcd(item, file_path):
     """Export point cloud to PCD format."""
     o3d.io.write_point_cloud(file_path, item, write_ascii=True)
     add_log_message(None, f"PointCloud saved to {file_path}")  # Here None is passed as the parent
+    export_log(file_path)
 
 def export_to_xyz(item, file_path):
     """Export point cloud to XYZ format."""
     o3d.io.write_point_cloud(file_path, item, write_ascii=True)
     add_log_message(None, f"PointCloud saved to {file_path}")
+    export_log(file_path)
 
 def export_to_ply(item, file_path):
     """Export to PLY format."""
@@ -88,6 +100,7 @@ def export_to_ply(item, file_path):
     elif isinstance(item, o3d.geometry.TriangleMesh):
         o3d.io.write_triangle_mesh(file_path, item, write_ascii=True)
     add_log_message(None, f"Saved to {file_path}")
+    export_log(file_path)
 
 def export_to_las(point_cloud, file_path):
     """Export Open3D point cloud to LAS format."""
@@ -104,6 +117,7 @@ def export_to_las(point_cloud, file_path):
 
     las.write(file_path)
     add_log_message(None, f"LAS File saved to {file_path}")
+    export_log(file_path)
 
 def export_to_geojson(point_cloud, file_path):
     """Export Open3D point cloud to GeoJSON format."""
@@ -117,6 +131,7 @@ def export_to_geojson(point_cloud, file_path):
     with open(file_path, 'w') as f:
         json.dump(geojson_data, f, indent=4)
     add_log_message(None, f"GeoJSON saved to {file_path}")
+    export_log(file_path)
 
 def add_log_message(parent, message):
     """Logs messages for the user."""
@@ -124,3 +139,15 @@ def add_log_message(parent, message):
         parent.add_log_message(message)  # Assuming `add_log_message` is a method in your parent class (main window)
     else:
         print(message)  # Fallback to print if no parent is available
+
+def export_log(parent, filepath):
+    # Remove the existing extension and add .txt
+    base_name = os.path.splitext(filepath)[0]
+    txt_filepath = f"{base_name}.txt"
+
+    # Write the log dictionary to the .txt file
+    with open(txt_filepath, "w") as file:
+        for key, value in parent.log.items():
+            file.write(f"{key}: {value}\n")
+
+    print(f"Log exported to {txt_filepath}")

@@ -1,0 +1,233 @@
+/* General Font Styling for the Menu Bar */
+QMainWindow QMenuBar {
+    font-size: 12px;
+}
+
+/* Style for individual menu items in the menu bar */
+QMenuBar::item {
+    background-color: #f5f5f5; /* Light background for the items */
+    color: black; /* Text color */
+}
+
+/* Style for the drop-down (submenus) */
+QMenu {
+    background-color: #e0e0e0; /* Light background for the drop-down menu */
+    border: 1px solid #bbbbbb; /* Border for the drop-down menu */
+    font-size: 12pt; /* Font size for drop-down menu items */
+    padding: 5px;
+}
+
+/* Style for items inside the drop-down menu */
+QMenu::item {
+    font-size: 12px;
+}
+
+/* Style for Tab Bar */
+QTabBar::tab {
+    color: #444444;
+    border: 1px solid #cccccc;
+    border-bottom-style: none;
+    background-color: #f0f0f0;
+    padding: 3px 10px;
+    margin-right: -1px;
+}
+
+/* Text Styling for Items */
+QWidget:item:hover {
+    background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #ffa02f, stop: 1 #d7801a);
+    color: #000000;
+}
+
+QWidget:item:selected {
+    background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #ffa02f, stop: 1 #d7801a);
+}
+
+QWidget:disabled {
+    color: #808080;
+    background-color: #f0f0f0;
+}
+
+QWidget:focus {
+    /*border: 1px solid darkgray;*/
+}
+
+/* Controls the background of splash and content */
+QWidget {
+    color: #444444;
+    background-color: #f9f9f9;
+}
+
+/* Hover Effect for ComboBox and Button */
+QComboBox:hover, QPushButton:hover {
+    border: 2px solid QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #ffa02f, stop: 1 #d7801a);
+}
+
+/* Scroll Bar Styling */
+
+/* Horizontal Scroll Bar */
+QScrollBar:horizontal {
+    border: 1px solid #e0e0e0;
+    background: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0.0 #f5f5f5, stop: 0.2 #dcdcdc, stop: 1 #c6c6c6);
+    height: 7px;
+    margin: 0px 16px;
+}
+
+QScrollBar::handle:horizontal {
+    background: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 #ffa02f, stop: 0.5 #d7801a, stop: 1 #ffa02f);
+    min-height: 20px;
+    border-radius: 2px;
+}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    border: 1px solid #dddddd;
+    border-radius: 2px;
+    background: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #f5f5f5, stop: 1 #dcdcdc);
+    width: 15px;
+}
+
+/* Vertical Scroll Bar */
+QScrollBar:vertical {
+    background: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0.0 #f5f5f5, stop: 0.2 #dcdcdc, stop: 1 #c6c6c6);
+    width: 7px;
+    margin: 16px 0;
+    border: 1px solid #e0e0e0;
+}
+
+QScrollBar::handle:vertical {
+    background: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #ffa02f, stop: 0.5 #d7801a, stop: 1 #ffa02f);
+    min-height: 20px;
+    border-radius: 2px;
+}
+
+QScrollBar::add-line:vertical {
+    border: 1px solid #dddddd;
+    border-radius: 2px;
+    background: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #ffa02f, stop: 1 #d7801a);
+    height: 14px;
+}
+
+QScrollBar::sub-line:vertical {
+    border: 1px solid #dddddd;
+    border-radius: 2px;
+    background: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #d7801a, stop: 1 #ffa02f);
+    height: 14px;
+}
+
+QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {
+    border: 1px solid black;
+    width: 1px;
+    height: 1px;
+    background: white;
+}
+
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: none;
+}
+
+/* Tooltip Styling */
+QToolTip {
+    border: 1px solid black;
+    background-color: #ffaa00;
+    padding: 1px;
+    border-radius: 3px;
+    opacity: 100;
+}
+
+/* TreeView and ListView Styling */
+QTreeView, QListView {
+    background-color: #f5f5f5;
+    margin-left: 5px;
+}
+
+/* Menu Bar Item Styling */
+QMenuBar::item {
+    background: transparent;
+}
+
+QMenuBar::item:selected {
+    background: transparent;
+    border: 1px solid #ffaa00;
+}
+
+QMenuBar::item:pressed {
+    background: #f5f5f5;
+    border: 1px solid #bbbbbb;
+    background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 1 #f9f9f9, stop: 0.4 #e5e5e5);
+    margin-bottom: -1px;
+    padding-bottom: 1px;
+}
+
+/* Menu Styling */
+QMenu {
+    border: 1px solid #bbbbbb;
+}
+
+QMenu::item {
+    padding: 2px 20px;
+}
+
+QMenu::item:selected {
+    color: #000000;
+}
+
+/* Disabled Widget Styling */
+QWidget:disabled {
+    color: #808080;
+    background-color: #f9f9f9;
+}
+
+/* Abstract Item View Styling */
+QAbstractItemView {
+    background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #e0e0e0, stop: 0.1 #f0f0f0, stop: 1 #d9d9d9);
+}
+
+/* Focused Widget Styling */
+QWidget:focus {
+    /*border: 1px solid darkgray;*/
+}
+
+/* QPushButton Default Styling */
+QPushButton {
+    color: #444444;
+    background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #e0e0e0, stop: 0.1 #d6d6d6, stop: 0.5 #cccccc, stop: 0.9 #b2b2b2, stop: 1 #999999);
+    border-width: 1px;
+    border-color: #b0b0b0;
+    border-style: solid;
+    border-radius: 6px;
+    padding: 3px;
+    font-size: 12px;
+    min-width: 40px;
+}
+
+/* QPushButton Pressed State */
+QPushButton:pressed {
+    background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #d1d1d1, stop: 0.1 #bfbfbf, stop: 0.5 #b1b1b1, stop: 0.9 #a6a6a6, stop: 1 #9e9e9e);
+}
+
+/* QComboBox Default Styling */
+QComboBox {
+    selection-background-color: #ffaa00;
+    background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #e0e0e0, stop: 0.1 #d6d6d6, stop: 0.5 #cccccc, stop: 0.9 #b2b2b2, stop: 1 #999999);
+    border-style: solid;
+    border: 1px solid #b0b0b0;
+    border-radius: 5px;
+}
+
+/* QComboBox and QPushButton Hover Effect */
+QComboBox:hover, QPushButton:hover {
+    border: 2px solid QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #ffa02f, stop: 1 #d7801a);
+}
+
+/* QComboBox Active State */
+QComboBox:on {
+    padding-top: 3px;
+    padding-left: 4px;
+    background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #e0e0e0, stop: 0.1 #d6d6d6, stop: 0.5 #cccccc, stop: 0.9 #b2b2b2, stop: 1 #999999);
+    selection-background-color: #ffaa00;
+}
+
+/* QComboBox Dropdown List */
+QComboBox QAbstractItemView {
+    border: 2px solid darkgray;
+    selection-background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #ffa02f, stop: 1 #d7801a);
+}

@@ -1,0 +1,106 @@
+/* Forest Retreat Light Theme */
+QWidget {
+    background-color: #B0D2A1; /* Soft olive green */
+    color: #4E2A1C; /* Dark brown text */
+    font-family: 'Arial', sans-serif;
+}
+
+QPushButton {
+    background-color: #A0C96A; /* Lighter green for buttons */
+    color: #2E3440;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+}
+
+QPushButton:hover {
+    background-color: #85A75A; /* Slightly darker green on hover */
+}
+
+QPushButton:pressed {
+    background-color: #6D8E46; /* Even darker green when pressed */
+}
+
+QLineEdit, QTextEdit {
+    background-color: #A0C96A; /* Light green for input fields */
+    color: #2E3440;
+    border: 1px solid #4E2A1C;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+QLineEdit:focus, QTextEdit:focus {
+    border-color: #A0C96A; /* Highlight focus */
+}
+
+QStatusBar {
+    background-color: #A0C96A;
+    color: #2E3440;
+}
+
+QMenuBar {
+    background-color: #A0C96A;
+    color: #2E3440;
+}
+
+QMenuBar::item {
+    background-color: transparent;
+    padding: 5px;
+}
+
+QMenuBar::item:selected {
+    background-color: #6D8E46; /* Darker green when selected */
+}
+
+QMenu {
+    background-color: #A0C96A;
+    color: #2E3440;
+    border: 1px solid #6D8E46;
+}
+
+QMenu::item:selected {
+    background-color: #6D8E46;
+}
+
+QScrollBar:vertical, QScrollBar:horizontal {
+    background: #A0C96A;
+    border: none;
+    width: 10px;
+}
+
+QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+    background: #4E2A1C; /* Dark brown scrollbar handle */
+    border-radius: 5px;
+}
+
+QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover {
+    background: #6D8E46; /* Darker green on hover */
+}
+
+QTabWidget::pane {
+    border: 1px solid #6D8E46;
+}
+
+QTabBar::tab {
+    background: #A0C96A;
+    color: #2E3440;
+    padding: 5px;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+}
+
+QTabBar::tab:selected {
+    background: #6D8E46;
+}
+
+QProgressBar {
+    background-color: #A0C96A;
+    color: #2E3440;
+    border: 1px solid #6D8E46;
+    border-radius: 4px;
+    text-align: center;
+}
+
+QProgressBar::chunk {
+    background-color: #4E2A1C; /* Dark brown for progress bar chunk */
+}

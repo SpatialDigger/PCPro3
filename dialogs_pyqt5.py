@@ -5,7 +5,7 @@ from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QComboBox, QCheckBox, QPushButton,
     QHBoxLayout, QDialogButtonBox, QDoubleSpinBox, QSpinBox, QLineEdit,
-    QTextEdit, QSlider, QApplication, QFormLayout, QFileDialog
+    QTextEdit, QSlider, QApplication, QFormLayout, QFileDialog, QMessageBox
 )
 
 from PyQt5.QtSvg import QSvgWidget
@@ -122,6 +122,11 @@ class KeyboardShortcutsDialog(QDialog):
         self.setLayout(layout)
 
 
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel
+from PyQt5.QtCore import Qt, QUrl
+from PyQt5.QtGui import QDesktopServices
+from PyQt5.QtSvg import QSvgWidget
+
 class AboutDialog(QDialog):
     def __init__(self):
         super().__init__()
@@ -138,18 +143,16 @@ class AboutDialog(QDialog):
             "<p><b>Author:</b> Gary Nobles</p>"
             "<p><b>Description:</b> A Pointcloud-focused application designed to <br/> enhance productivity and streamline workflows.</p>"
             "<p><b>License:</b> GNU GENERAL PUBLIC LICENSE</p>"
-            # "<p><b>Website:</b> <a href='https://github.com/SpatialDigger/PCPro3'>Project GitHub</a></p>"
         )
         about_label.setOpenExternalLinks(True)
         about_label.setAlignment(Qt.AlignCenter)
 
-
         # GitHub Icon & Link Layout
         github_layout = QHBoxLayout()
 
-        # GitHub SVG Icon
+        # GitHub SVG Icon (color set to white)
         self.github_icon = QSvgWidget()
-        self.github_icon.load(b'''<svg xmlns="http://www.w3.org/2000/svg" height="30" fill="black" viewBox="0 0 512 512">
+        self.github_icon.load(b'''<svg xmlns="http://www.w3.org/2000/svg" height="30" fill="white" viewBox="0 0 512 512">
         <path d="M256,32C132.3,32,32,132.3,32,256c0,99.9,64.8,184.6,154.7,214.7c11.3,2.1,15.5-4.9,15.5-11V421
         c-62.9,13.7-76.2-30.4-76.2-30.4c-10.3-26.2-25.2-33.2-25.2-33.2c-20.6-14.1,1.6-13.8,1.6-13.8c22.8,1.6,34.8,23.4,34.8,23.4
         c20.2,34.6,53,24.6,65.9,18.8c2.1-14.6,7.9-24.6,14.4-30.3c-50.2-5.7-103-25.1-103-111.8c0-24.7,8.8-44.9,23.2-60.7
@@ -163,6 +166,19 @@ class AboutDialog(QDialog):
         github_label = QLabel('<a href="https://github.com/SpatialDigger/PCPro3">GitHub Repository</a>')
         github_label.setOpenExternalLinks(True)
         github_label.setAlignment(Qt.AlignCenter)
+
+        # Apply custom styling to the hyperlink
+        github_label.setStyleSheet("""
+            a {
+                color: #1f77b4; /* Set color to a blue shade */
+                text-decoration: none; /* Remove underline */
+                font-weight: bold; /* Make the text bold */
+            }
+            a:hover {
+                color: #ff6347; /* Change color to a red-orange when hovered */
+                text-decoration: underline; /* Add underline on hover */
+            }
+        """)
 
         # Clickable icon - open GitHub on click
         self.github_icon.mousePressEvent = self.open_github
@@ -179,6 +195,7 @@ class AboutDialog(QDialog):
 
     def open_github(self, event):
         QDesktopServices.openUrl(QUrl("https://github.com/SpatialDigger/PCPro3"))
+
 
 class ImportPointCloudDialog(QDialog):
     def __init__(self, parent=None):
