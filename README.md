@@ -68,16 +68,17 @@ For questions or suggestions, reach out at garynobles20@gmail.com or open an iss
 
 ### New Features:
 - #30 Updated the theme to the Orange-Black theme, now called Obsidian Flame
-- Added a preferences dialogue
-- Added several themes
-- Added the option to change the 3D Viewer background colour in the preferences
-- Added the splash screen
-- Improved user experience 
+- #29 Added a preferences dialogue
+- #30 Added several themes
+- #29 Added the option to change the 3D Viewer background colour in the preferences
+- #36 Added the splash screen
+- #35 Improved user experience 
 -   CTRL + A
 -   Click in blank space deselects all
--   SHFT + Click selects a range (only works on parent items)
-- XYZ Axis added
-- Bounding Box added
+-   SHIFT + Click selects a range (only works on parent items)
+-   Reordering of items in the contents pane
+- #13 XYZ Axis added
+- #31 Bounding Box added
 - #28 Added example 3 to the documentation
 - #23 Added example 2 to the documentation
 - #25 Reordering of menu items implemented

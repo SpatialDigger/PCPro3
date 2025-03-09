@@ -82,7 +82,19 @@ from pathlib import Path
 from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5.QtGui import QColor
 
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget, QAbstractItemView
+from PyQt5.QtCore import Qt
 
+from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QApplication
+from PyQt5.QtCore import Qt, QMimeData, QByteArray
+from PyQt5.QtGui import QDrag
+
+
+from PyQt5.QtWidgets import QApplication, QTreeWidget, QTreeWidgetItem
+from PyQt5.QtCore import Qt, QMimeData, QByteArray
+from PyQt5.QtGui import QDrag
+
+from tracking import report
 
 import json
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QComboBox, QPushButton, QColorDialog, QErrorMessage
@@ -244,20 +256,6 @@ class AdPanel(QWidget):
         layout.addWidget(self.web_view)
 
 
-from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget, QAbstractItemView
-from PyQt5.QtCore import Qt
-
-from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QApplication
-from PyQt5.QtCore import Qt, QMimeData, QByteArray
-from PyQt5.QtGui import QDrag
-
-
-from PyQt5.QtWidgets import QApplication, QTreeWidget, QTreeWidgetItem
-from PyQt5.QtCore import Qt, QMimeData, QByteArray
-from PyQt5.QtGui import QDrag
-
-from tracking import report
-
 class CustomTreeWidget(QTreeWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -399,13 +397,6 @@ class CustomTreeWidget(QTreeWidget):
                 self.insertTopLevelItem(index, item)
 
         event.acceptProposedAction()
-
-
-
-
-
-
-
 
 
 class MainWindow(QMainWindow):
