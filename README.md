@@ -63,11 +63,11 @@ For questions or suggestions, reach out at garynobles20@gmail.com or open an iss
 ---
 
 
-## Version [0.1.3]
+## Version [1.0.0] Major Release
 **Release Date:** [Under Development]
 
 ### New Features:
-- Updated the theme to the Orange-Black theme, now called Obsidian Flame
+- #30 Updated the theme to the Orange-Black theme, now called Obsidian Flame
 - Added a preferences dialogue
 - Added several themes
 - Added the option to change the 3D Viewer background colour in the preferences
@@ -78,9 +78,12 @@ For questions or suggestions, reach out at garynobles20@gmail.com or open an iss
 -   SHFT + Click selects a range (only works on parent items)
 - XYZ Axis added
 - Bounding Box added
+- #28 Added example 3 to the documentation
+- #23 Added example 2 to the documentation
+- #25 Reordering of menu items implemented
 
 ### Bug Fixes:
-- [Bug fix 1 description]
+- #19 Normal calculation steps no longer added to the menu
 - [Bug fix 2 description]
 
 ### Performance Improvements:

@@ -138,8 +138,8 @@ class AboutDialog(QDialog):
 
         # App info
         about_label = QLabel(
-            "<h2>PCPro3</h2>"
-            "<p><b>Version:</b> 2025 0.1.2</p>"
+            "<h2>PCPro 3</h2>"
+            "<p><b>Version:</b> 2025 1.0.0</p>"
             "<p><b>Author:</b> Gary Nobles</p>"
             "<p><b>Description:</b> A Pointcloud-focused application designed to <br/> enhance productivity and streamline workflows.</p>"
             "<p><b>License:</b> GNU GENERAL PUBLIC LICENSE</p>"

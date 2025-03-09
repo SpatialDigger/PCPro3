@@ -247,74 +247,172 @@ class AdPanel(QWidget):
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget, QAbstractItemView
 from PyQt5.QtCore import Qt
 
+from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QApplication
+from PyQt5.QtCore import Qt, QMimeData, QByteArray
+from PyQt5.QtGui import QDrag
+
+
+from PyQt5.QtWidgets import QApplication, QTreeWidget, QTreeWidgetItem
+from PyQt5.QtCore import Qt, QMimeData, QByteArray
+from PyQt5.QtGui import QDrag
+
+from tracking import report
+
 class CustomTreeWidget(QTreeWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setSelectionMode(QAbstractItemView.MultiSelection)  # Multi-selection mode
+        self.setSelectionMode(QTreeWidget.MultiSelection)
         self.setHeaderLabels(["Contents"])
-        self.last_selected_item = None  # To store the last selected item for Shift + Click
+        self.setDragDropMode(QTreeWidget.InternalMove)  # Internal movement
+        self.setDragEnabled(True)  # Enable dragging
+        self.setAcceptDrops(True)  # Enable dropping
+        self.setDefaultDropAction(Qt.MoveAction)
+        self.last_selected_item = None  # Store last selected item for Shift + Click
+        self.dragged_items = []  # Store dragged items
 
     def mousePressEvent(self, event):
         item = self.itemAt(event.pos())
 
         if event.modifiers() == Qt.ShiftModifier and self.last_selected_item:
-            # If Shift is pressed, select range from the last selected item to the clicked item
             self.select_range(self.last_selected_item, item)
-
         elif not item:
-            # If clicked on an empty space, clear selection
             self.clearSelection()
-
         else:
-            # Normal click, update the last selected item
             self.last_selected_item = item
 
         super().mousePressEvent(event)
 
     def select_range(self, start_item, end_item):
-        """Select all items in between start_item and end_item."""
         start_row = self.indexOfTopLevelItem(start_item)
         end_row = self.indexOfTopLevelItem(end_item)
 
         if start_row == -1 or end_row == -1:
             return
 
-        # Select all items between the start and end item rows (inclusive)
         if start_row > end_row:
             start_row, end_row = end_row, start_row
 
-        # Loop through the range and select both top-level items and their children
         for row in range(start_row, end_row + 1):
             item = self.topLevelItem(row)
             self.select_item_and_children(item)
 
     def select_item_and_children(self, item):
-        """Select an item and all of its children."""
         if item is None:
             return
-        item.setSelected(True)  # Select the current item
+        item.setSelected(True)
         for i in range(item.childCount()):
-            child_item = item.child(i)
-            if child_item:
-                child_item.setSelected(True)  # Select each child
+            item.child(i).setSelected(True)
 
     def keyPressEvent(self, event):
         if event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_A:
             self.select_all_items()
         else:
-            super().keyPressEvent(event)  # Call the default key press event handler
+            super().keyPressEvent(event)
 
     def select_all_items(self):
-        """Select all items in the tree, including children."""
         for row in range(self.topLevelItemCount()):
             item = self.topLevelItem(row)
             self.select_item_and_children(item)
+
+    def startDrag(self, supportedActions):
+        """Handles the drag event"""
+        self.dragged_items = self.selectedItems()
+        if not self.dragged_items:
+            return
+
+        drag = QDrag(self)
+        mime_data = QMimeData()
+        mime_data.setData("application/x-qtreewidgetitem", QByteArray())
+        drag.setMimeData(mime_data)
+
+        drag.exec_(Qt.MoveAction)  # Execute the drag operation
+
+    def dragEnterEvent(self, event):
+        """Accepts drag enter event"""
+        if event.mimeData().hasFormat("application/x-qtreewidgetitem"):
+            event.acceptProposedAction()
+
+    def dragMoveEvent(self, event):
+        """Restricts dragging to the same hierarchy level"""
+        target_item = self.itemAt(event.pos())
+
+        if not target_item:
+            # Prevent moving children to the top level
+            if any(item.parent() for item in self.dragged_items):
+                event.ignore()
+            else:
+                event.acceptProposedAction()
+            return
+
+        # Prevent dropping onto itself
+        if any(item is target_item for item in self.dragged_items):
+            event.ignore()
+            return
+
+        parent = self.dragged_items[0].parent()
+        target_parent = target_item.parent()
+
+        # Prevent moving children to a higher level (top level)
+        if parent and not target_parent:
+            event.ignore()
+            return
+
+        # Ensure items stay within the same hierarchy level
+        if parent != target_parent:
+            event.ignore()
+            return
+
+        event.acceptProposedAction()
+
+    def dropEvent(self, event):
+        """Handles the drop event ensuring items do not disappear"""
+        target_item = self.itemAt(event.pos())
+
+        if not self.dragged_items:
+            return
+
+        parent = self.dragged_items[0].parent()
+        target_parent = target_item.parent() if target_item else None
+
+        # Prevent children from moving to the top level
+        if parent and not target_parent:
+            event.ignore()
+            return
+
+        # Ensure items stay within the same hierarchy level
+        if parent != target_parent:
+            event.ignore()
+            return
+
+        # Move items to the correct position
+        for item in self.dragged_items:
+            if item == target_item:
+                continue  # Avoid dropping onto itself
+
+            if parent:
+                parent.removeChild(item)
+                index = parent.indexOfChild(target_item) + 1
+                parent.insertChild(index, item)
+            else:
+                self.takeTopLevelItem(self.indexOfTopLevelItem(item))
+                index = self.indexOfTopLevelItem(target_item) + 1
+                self.insertTopLevelItem(index, item)
+
+        event.acceptProposedAction()
+
+
+
+
+
+
+
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Pointcloud Processor 0.1.3")
+        self.setWindowTitle("Pointcloud Processor 3")
+        self.version = '1.0.0'
 
         # Set the window icon
         self.setWindowIcon(QIcon("icons/icon.ico"))
@@ -330,13 +428,6 @@ class MainWindow(QMainWindow):
         self.top_panel = QWidget()
         top_layout = QVBoxLayout()
         self.top_panel.setLayout(top_layout)
-
-        # Tree widget for datasets
-        # self.tree = QTreeWidget()
-        # self.tree.setHeaderLabels(["Contents"])
-        # self.tree.setSelectionMode(QAbstractItemView.MultiSelection)
-        # self.tree.itemChanged.connect(self.on_item_changed)
-
 
         # Tree widget for datasets
         self.tree = CustomTreeWidget()
@@ -679,7 +770,6 @@ class MainWindow(QMainWindow):
         remove_items_action.setEnabled(True)
         remove_items_action.triggered.connect(self.remove_selected_items)
         tools_menu.addAction(remove_items_action)
-
 
         # Analysis Menu
         analysis_menu = menu_bar.addMenu("Analysis")
@@ -1366,6 +1456,12 @@ def visualize_pointcloud(pointcloud):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+
+    try:
+        report(version='PointCloud Processing Pro 3 1.0.0')
+    except IOError:
+        print('export log failed')
+
     show_splash = True
     window = MainWindow()
     theme = window.get_theme()
