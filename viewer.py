@@ -126,14 +126,17 @@ class Open3DViewer:
 
     def toggle_xyz_axis_visibility(self):
         """Toggle the visibility of the XYZ axis."""
-        if self.axis_visible:
-            # Remove the XYZ axis if it exists
-            self.vis.remove_geometry(self.xyz_axis)
+        if self.items:
+            if self.axis_visible:
+                # Remove the XYZ axis if it exists
+                self.vis.remove_geometry(self.xyz_axis)
+            else:
+                # Add the XYZ axis in relation to the bounding box of visible items
+                self.add_xyz_axis()
+            self.axis_visible = not self.axis_visible
+            self.update_viewer()
         else:
-            # Add the XYZ axis in relation to the bounding box of visible items
-            self.add_xyz_axis()
-        self.axis_visible = not self.axis_visible
-        self.update_viewer()
+            pass
 
     def toggle_bounding_box_visibility(self):
         """Toggle the visibility of the bounding box."""

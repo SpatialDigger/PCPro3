@@ -77,9 +77,9 @@ def compute_normals(self, selected_items):
         child_name = generate_unique_name(base_child_name, existing_children)
 
         # Add the new point cloud/mesh to the tree and data
-        self.add_child_to_tree_and_data(parent_name, child_name, processed_pc)
+        # self.add_child_to_tree_and_data(parent_name, child_name, processed_pc)
 
-        self.add_log_message(f"Added computed normals '{child_name}' under '{parent_name}'.")
+        self.add_log_message(f"Computed normals '{child_name}' under '{parent_name}'.")
 
 
 
@@ -133,6 +133,6 @@ def invert_normals(self, selected_items):
         child_name = generate_unique_name(base_child_name, existing_children)
 
         # Add the new point cloud to the tree and data
-        self.add_child_to_tree_and_data(parent_name, child_name, inverted_pc)
+        # self.add_child_to_tree_and_data(parent_name, child_name, inverted_pc)
 
-        self.add_log_message(f"Added inverted normals '{child_name}' under '{parent_name}'.")
+        self.add_log_message(f"Inverted normals '{child_name}' under '{parent_name}'.")

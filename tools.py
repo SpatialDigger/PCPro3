@@ -104,8 +104,6 @@ def apply_spatial_transformation(self, selected_items):
         # Refresh the Open3D viewer
         self.o3d_viewer.update_viewer()
 
-
-
 def convexhull3d(self, selected_items):
     # Retrieve selected items from the tree
     # selected_items = self.selected_items()
