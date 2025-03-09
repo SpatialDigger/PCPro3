@@ -76,6 +76,8 @@ For questions or suggestions, reach out at garynobles20@gmail.com or open an iss
 -   CTRL + A
 -   Click in blank space deselects all
 -   SHFT + Click selects a range (only works on parent items)
+- XYZ Axis added
+- Bounding Box added
 
 ### Bug Fixes:
 - [Bug fix 1 description]

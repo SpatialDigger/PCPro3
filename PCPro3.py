@@ -224,7 +224,6 @@ class PreferencesDialog(QDialog):
         error_dialog.exec_()
 
 
-
 class AdPanel(QWidget):
     """A simple panel to display an AdMob banner ad."""
     def __init__(self):
@@ -318,7 +317,8 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Pointcloud Processor 0.1.3")
 
         # Set the window icon
-        self.setWindowIcon(QIcon("icons/logo.ico"))
+        self.setWindowIcon(QIcon("icons/icon.ico"))
+
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
@@ -374,6 +374,13 @@ class MainWindow(QMainWindow):
 
         self.tree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.tree.customContextMenuRequested.connect(self.show_right_click_menu)
+
+        self.axis_visible = False
+        # self.xyz_axis = None
+
+        self.bbox_visible = False
+        self. obbox_visible = False
+        self.labels3d = False
 
         self.coordinate_frame_visible = False
         self.metadata = {}
@@ -551,10 +558,28 @@ class MainWindow(QMainWindow):
         view_log_action.triggered.connect(self.log_window.show)
         view_menu.addAction(view_log_action)
 
+        add_bounding_box_action = QAction(self.colorize_svg("icons/min/icons_bounding_box.svg", icon_colour), "Bounding Box", self)
+        add_bounding_box_action.setToolTip("Merge selected pointclouds")
+        add_bounding_box_action.setEnabled(True)
+        add_bounding_box_action.triggered.connect(lambda: self.toggle_bbox())
+        view_menu.addAction(add_bounding_box_action)
+
+        add_oriented_bounding_box_action = QAction(self.colorize_svg("icons/min/icons_bounding_box.svg", icon_colour), "Oriented Bounding Box", self)
+        add_oriented_bounding_box_action.setToolTip("Merge selected pointclouds")
+        add_oriented_bounding_box_action.setEnabled(True)
+        add_oriented_bounding_box_action.triggered.connect(lambda: self.toggle_obbox())
+        view_menu.addAction(add_oriented_bounding_box_action)
+
+        add_oriented_bounding_box_action = QAction(self.colorize_svg("icons/min/icons_bounding_box.svg", icon_colour), "Tick Marks", self)
+        add_oriented_bounding_box_action.setToolTip("Merge selected pointclouds")
+        add_oriented_bounding_box_action.setEnabled(False)
+        add_oriented_bounding_box_action.triggered.connect(lambda: self.toggle_labels3d())
+        view_menu.addAction(add_oriented_bounding_box_action)
+
         axis_action = QAction(self.colorize_svg("icons/min/hexagon.svg", icon_colour), "Display Axis", self)
-        axis_action.setToolTip("Sample the pointcloud data")
-        axis_action.setEnabled(False)
-        axis_action.triggered.connect(lambda: self.add_axis())
+        axis_action.setToolTip("Display XYZ Axis")
+        axis_action.setEnabled(True)
+        axis_action.triggered.connect(lambda: self.toggle_axis())
         view_menu.addAction(axis_action)
 
         # Add "Toggle XYZ Axis" action
@@ -614,11 +639,7 @@ class MainWindow(QMainWindow):
         # fill_holes_action.triggered.connect(lambda: ball_pivoting_triangulation(self, self.selected_items()))
         filters_menu.addAction(fill_holes_action)
 
-        add_bounding_box_action = QAction(self.colorize_svg("icons/min/icons_bounding_box.svg", icon_colour), "Bounding Box", self)
-        add_bounding_box_action.setToolTip("Merge selected pointclouds")
-        add_bounding_box_action.setEnabled(False)
-        add_bounding_box_action.triggered.connect(lambda: boundingbox3d(self, self.selected_items()))
-        view_menu.addAction(add_bounding_box_action)
+
 
         filter_points_by_hull_footprint_action = QAction(self.colorize_svg("icons/min/icons_hull_footprint.svg", icon_colour), "Hull Footprint", self)
         filter_points_by_hull_footprint_action.setToolTip("Filter points based on a hull footprint")
@@ -663,11 +684,13 @@ class MainWindow(QMainWindow):
         # Analysis Menu
         analysis_menu = menu_bar.addMenu("Analysis")
 
+        segmentation_menu = analysis_menu.addMenu("Segmentation")
+
         dbscan_action = QAction(self.colorize_svg("icons/min/icons_dbscan_clustering.svg", icon_colour), "DBSCAN Clustering", self)
         dbscan_action.setToolTip("Perform DBSCAN clustering on the pointcloud")
         dbscan_action.setEnabled(True)
         dbscan_action.triggered.connect(lambda: dbscan_analysis(self, self.selected_items()))
-        analysis_menu.addAction(dbscan_action)
+        segmentation_menu.addAction(dbscan_action)
 
         poisson_surface_reconstruction_action = QAction(self.colorize_svg("icons/min/icons_poisson_surface_reconstruction.svg", icon_colour), "Poisson Surface Reconstruction", self)
         poisson_surface_reconstruction_action.setToolTip("Compute the 3D convex hull of the pointcloud")
@@ -1218,21 +1241,44 @@ class MainWindow(QMainWindow):
 
         return axis
 
-    def add_axis(self, length=1.0):
-        """Handles importing a point cloud and adding it to the tree and data dictionary."""
-        try:
-            axis = self.create_axis()
+    # def add_axis(self, length=1.0):
+    #     """Handles importing a point cloud and adding it to the tree and data dictionary."""
+    #     try:
+    #         axis = self.create_axis()
+    #
+    #         # Add the point cloud as a child under the file name
+    #         self.add_child_to_tree_and_data(
+    #             parent_name="Display",
+    #             child_name="xyz-axis",
+    #             data=axis
+    #         )
+    #
+    #         self.add_log_message(f"Axis added to display.")
+    #     except Exception as e:
+    #         self.add_log_message(f"Failed to add point cloud: {str(e)}")
 
-            # Add the point cloud as a child under the file name
-            self.add_child_to_tree_and_data(
-                parent_name="Display",
-                child_name="xyz-axis",
-                data=axis
-            )
+    def toggle_axis(self):
+        """Toggles the visibility of the XYZ axis in the Open3D viewer."""
+        self.axis_visible = not self.axis_visible
+        self.o3d_viewer.toggle_xyz_axis_visibility()  # Call the viewer method to toggle the axis
+        self.log_window.add_message(f"XYZ Axis is now {'visible' if self.axis_visible else 'hidden'}.")
+        # print(f"XYZ Axis is now {'visible' if self.axis_visible else 'hidden'}.")
 
-            self.add_log_message(f"Axis added to display.")
-        except Exception as e:
-            self.add_log_message(f"Failed to add point cloud: {str(e)}")
+
+    def toggle_bbox(self):
+        self.bbox_visible = not self.bbox_visible
+        self.o3d_viewer.toggle_bounding_box_visibility()  # Call the viewer method to toggle the axis
+        self.log_window.add_message(f"Bounding Box is now {'visible' if self.bbox_visible else 'hidden'}.")
+
+    def toggle_obbox(self):
+        self.obbox_visible = not self.obbox_visible
+        self.o3d_viewer.toggle_oriented_bounding_box_visibility()  # Call the viewer method to toggle the axis
+        self.log_window.add_message(f"Oriented Bounding Box is now {'visible' if self.obbox_visible else 'hidden'}.")
+
+    def toggle_labels3d(self):
+        self.labels3d = not self.labels3d
+        self.o3d_viewer.toggle_labels3d()  # Call the viewer method to toggle the axis
+        self.log_window.add_message(f"Tick Marks are now {'visible' if self.labels3d else 'hidden'}.")
 
 
 
@@ -1329,6 +1375,9 @@ if __name__ == "__main__":
 
     # Proceed with launching MainWindow
     window.resize(400, 800)
+    window.o3d_viewer.show_window()
     window.show()
+
+
 
     sys.exit(app.exec_())
