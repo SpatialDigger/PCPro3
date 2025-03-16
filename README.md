@@ -13,12 +13,6 @@ PCPro is a high-performance point cloud processing tool designed for efficient 3
 ## Promo
 [PCPro3_intro.mp4](videos/PCPro3_intro.mp4)
 
-<video controls width="600">
-  <source src="videos/PCPro3_intro.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
-
-
 ## Installation
 
 ### Prerequisites
@@ -83,10 +77,11 @@ For questions or suggestions, reach out at garynobles20@gmail.com or open an iss
 - #29 Added the option to change the 3D Viewer background colour in the preferences
 - #36 Added the splash screen
 - #35 Improved user experience 
--   CTRL + A
--   Click in blank space deselects all
--   SHIFT + Click selects a range (only works on parent items)
--   Reordering of items in the contents pane
+  - CTRL + A 
+  - Click in blank space deselects all 
+  - ESC deselects all 
+  - SHIFT + Click selects a range (only works on parent items)
+  - CTRL + Click to drag item to reorder in the contents pane
 - #13 XYZ Axis added
 - #31 Bounding Box added
 - #28 Added example 3 to the documentation
