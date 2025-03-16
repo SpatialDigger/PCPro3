@@ -10,6 +10,15 @@ PCPro is a high-performance point cloud processing tool designed for efficient 3
 - **Transformation Tools**: Apply scaling, rotation, and translation.
 - **File Format Support**: Work with PLY, LAS, and other common formats.
 
+## Promo
+[PCPro3_intro.mp4](videos/PCPro3_intro.mp4)
+
+<video controls width="600">
+  <source src="videos/PCPro3_intro.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
+
 ## Installation
 
 ### Prerequisites
@@ -67,7 +76,8 @@ For questions or suggestions, reach out at garynobles20@gmail.com or open an iss
 **Release Date:** [Under Development]
 
 ### New Features:
-- #30 Updated the theme to the Orange-Black theme, now called Obsidian Flame
+- #41 Users can now submit issues, questions, requests under the About dropdown, these are logged directly in the GitHub Repo for assessment.
+- #30 Updated the default theme to the Orange-Black theme, now called Obsidian Flame
 - #29 Added a preferences dialogue
 - #30 Added several themes
 - #29 Added the option to change the 3D Viewer background colour in the preferences
