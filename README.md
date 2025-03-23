@@ -53,10 +53,44 @@ For questions or suggestions, reach out at garynobles20@gmail.com or open an iss
 # Changelog
 
 ---
+## Version [1.0.0] Major Release
+**Release Date:** [In Developmet]
 
+### New Features:
+- 
+### Bug Fixes:
+- [Bug fix 1 description]
+- [Bug fix 2 description]
+
+### Performance Improvements:
+- [Performance improvement 1 description]
+- [Performance improvement 2 description]
+
+### Compatibility Updates:
+- [Compatibility update description]
+
+### Known Issues:
+- Preferences are not working since they require Admin status
+- [Known issue description]
+- [Known issue description]
+
+### Upgrade Notes:
+- [Upgrade instruction or notes for users]
+
+### Coming Soon:
+- [Feature or update planned for next version]
+
+### Deprecation Notices:
+- [Deprecated feature or upcoming removal notice]
+
+### Special Thanks:
+- 
+
+
+---
 
 ## Version [1.0.0] Major Release
-**Release Date:** [Under Development]
+**Release Date:** 2015-03-23 [current]
 
 ### New Features:
 - #41 Users can now submit issues, questions, requests under the About dropdown, these are logged directly in the GitHub Repo for assessment.
@@ -79,35 +113,15 @@ For questions or suggestions, reach out at garynobles20@gmail.com or open an iss
 
 ### Bug Fixes:
 - #19 Normal calculation steps no longer added to the menu
-- [Bug fix 2 description]
-
-### Performance Improvements:
-- Cleaned up the log messages
-- [Performance improvement 2 description]
-
-### Compatibility Updates:
-- [Compatibility update description]
-
-### Known Issues:
-- [Known issue description]
-- [Known issue description]
-
-### Upgrade Notes:
-- [Upgrade instruction or notes for users]
-
-### Coming Soon:
-- [Feature or update planned for next version]
-
-### Deprecation Notices:
-- [Deprecated feature or upcoming removal notice]
 
 ### Special Thanks:
-- [Contributor name] for [contribution description]
+- Catherine Scott for raising enhancement requests
+- Christopher Roosevelt for raising enhancement requests
 
 ---
 
 ## Version 0.1.2 
-**Release Date:** 2025-03-02 [Current]
+**Release Date:** 2025-03-02
 
 ### New Features:
 - Added option to customize point cloud colors and revert to the default colors
@@ -130,9 +144,6 @@ For questions or suggestions, reach out at garynobles20@gmail.com or open an iss
 - #24 Mesh cannot change colour 
 - Mesh properties takes a while to load
 
-### Special Thanks:
-- Catherine Scott for raising enhancement requests
-- Christopher Roosevelt for raising enhancement requests
 
 ---
 
