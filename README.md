@@ -21,9 +21,7 @@ PCPro is a high-performance point cloud processing tool designed for efficient 3
 ## Minimum System Requirements
 
 - Operating System
-  - **Windows 7** or later
-  - Supports both **32-bit** and **64-bit** architectures (depending on the version of `.exe` built).
-
+  - **Windows 7** or later (Windows 11 reconmended)
 - Processor
   - **2 GHz** or faster multi-core processor.
 - Memory (RAM)
