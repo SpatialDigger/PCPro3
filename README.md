@@ -14,38 +14,27 @@ PCPro is a high-performance point cloud processing tool designed for efficient 3
 [PCPro3_intro.mp4](videos/PCPro3_intro.mp4)
 
 ## Installation
+- Run the installer, then double click the PCPro3.exe file.
+- This will open in demo mode, you will have all the functionality except export.
+- To get the full version 
 
-### Prerequisites
-- Python 3.12+
-- Open3D and other dependencies (install via pip):
-  ```bash
-  pip install -r requirements.txt
-  ```
+## Minimum System Requirements
 
-### Clone the Repository
-```bash
-git clone https://github.com/SpatialDigger/PCPro3.git
-cd pcpro
-```
+- Operating System
+  - **Windows 7** or later
+  - Supports both **32-bit** and **64-bit** architectures (depending on the version of `.exe` built).
 
-## Usage
-Run the main script to start processing point clouds:
-```bash
-python pcpro.py --input data.ply
-```
+- Processor
+  - **2 GHz** or faster multi-core processor.
+- Memory (RAM)
+  - **2 GB RAM** minimum
+    - **4 GB RAM** recommended for smoother performance.
 
-### Running the Executable
-Pre-built executable files are available in the `build` folder. Simply double-click `pcpro.exe` to launch the graphical user interface.
+- Disk Space
+  - At least **1 GB** of free disk space for installation and operation.
 
 ## Feature Requests
 Have an idea for a new feature? We’d love to hear from you! Please submit your feature requests by opening a **GitHub Issue** [here](https://github.com/SpatialDigger/PCPro3/issues).
-
-## Contributing
-Contributions are welcome! Follow these steps:
-1. Fork the repository.
-2. Create a new branch (`feature-branch`)
-3. Commit your changes.
-4. Push to your fork and create a pull request.
 
 ## Acknowledgments
 This project was developed in collaboration with the **Kaymakçı Archaeological Project** at **Koç University** and **ANAMED (Research Center for Anatolian Civilizations)**. Special thanks to the research team for their support and contributions.
@@ -55,7 +44,7 @@ This project was developed in collaboration with the **Kaymakçı Archaeological
 * Scott, Catherine B., Roosevelt, Christopher H., Nobles, Gary R., and Luke, Christina. "Born-Digital Logistics: Impacts of 3D Recording on Archaeological Workflow, Training, and Interpretation." Open Archaeology, vol. 7, no. 1, 2021, pp. 574-588. https://doi.org/10.1515/opar-2020-0150
 
 ## License
-This project is licensed under the GNU GENERAL PUBLIC LICENSE - see the [LICENSE](LICENSE) file for details.
+This project is licensed under a bespoke license, there are commercial and educational licences.
 
 ## Contact
 For questions or suggestions, reach out at garynobles20@gmail.com or open an issue on GitHub.
