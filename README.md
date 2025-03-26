@@ -53,7 +53,7 @@ For questions or suggestions, reach out at garynobles20@gmail.com or open an iss
 # Changelog
 
 ---
-## Version [1.0.0] Major Release
+## Version 1.1.0 [Minor Version]
 **Release Date:** [In Developmet]
 
 ### New Features:
@@ -70,7 +70,6 @@ For questions or suggestions, reach out at garynobles20@gmail.com or open an iss
 - [Compatibility update description]
 
 ### Known Issues:
-- Preferences are not working since they require Admin status
 - [Known issue description]
 - [Known issue description]
 
@@ -89,7 +88,7 @@ For questions or suggestions, reach out at garynobles20@gmail.com or open an iss
 
 ---
 
-## Version [1.0.0] Major Release
+## Version 1.0.0 [Major Release]
 **Release Date:** 2015-03-23 [current]
 
 ### New Features:
