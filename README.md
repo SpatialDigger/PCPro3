@@ -57,7 +57,8 @@ For questions or suggestions, reach out at garynobles20@gmail.com or open an iss
 **Release Date:** [In Developmet]
 
 ### New Features:
-- 
+- #49 Viewports
+  -  #46 Set views implemented
 ### Bug Fixes:
 - [Bug fix 1 description]
 - [Bug fix 2 description]
