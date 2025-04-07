@@ -60,6 +60,7 @@ For questions or suggestions, reach out at garynobles20@gmail.com or open an iss
 - #49 Viewports
   -  #46 Set views implemented
 - #9 licencing updated
+
 ### Bug Fixes:
 - [Bug fix 1 description]
 - [Bug fix 2 description]
@@ -112,6 +113,7 @@ For questions or suggestions, reach out at garynobles20@gmail.com or open an iss
 - #28 Added example 3 to the documentation
 - #23 Added example 2 to the documentation
 - #25 Reordering of menu items implemented
+- #37 Implement licencing
 
 ### Bug Fixes:
 - #19 Normal calculation steps no longer added to the menu
