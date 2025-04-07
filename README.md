@@ -59,6 +59,7 @@ For questions or suggestions, reach out at garynobles20@gmail.com or open an iss
 ### New Features:
 - #49 Viewports
   -  #46 Set views implemented
+- #9 licencing updated
 ### Bug Fixes:
 - [Bug fix 1 description]
 - [Bug fix 2 description]
@@ -76,6 +77,7 @@ For questions or suggestions, reach out at garynobles20@gmail.com or open an iss
 
 ### Upgrade Notes:
 - [Upgrade instruction or notes for users]
+- Backwards compatibility with version 1.0.0 licences
 
 ### Coming Soon:
 - [Feature or update planned for next version]
