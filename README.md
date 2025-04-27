@@ -58,8 +58,10 @@ For questions or suggestions, reach out at garynobles20@gmail.com or open an iss
 
 ### New Features:
 - #49 Viewports
-  -  #46 Set views implemented
+  - #46 Set views implemented
+  - #48 Viewpoint preserved when adding in new datasets, analysis, and bounding boxes
 - #9 licencing updated
+
 
 ### Bug Fixes:
 - [Bug fix 1 description]
