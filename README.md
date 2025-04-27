@@ -53,15 +53,13 @@ For questions or suggestions, reach out at garynobles20@gmail.com or open an iss
 # Changelog
 
 ---
-## Version 1.1.0 [Minor Version]
+## Version 1.2.0 [Minor Version]
 **Release Date:** [In Developmet]
 
 ### New Features:
-- #49 Viewports
-  - #46 Set views implemented
-  - #48 Viewpoint preserved when adding in new datasets, analysis, and bounding boxes
-- #9 licencing updated
-
+- []
+- []
+- []
 
 ### Bug Fixes:
 - [Bug fix 1 description]
@@ -91,11 +89,20 @@ For questions or suggestions, reach out at garynobles20@gmail.com or open an iss
 ### Special Thanks:
 - 
 
+---
+## Version 1.1.0 [Minor Version]
+**Release Date:** 2025-04-27 [current]
+
+### New Features:
+- #49 Viewports
+  - #46 Set views implemented
+  - #48 Viewpoint preserved when adding in new datasets, analysis, and bounding boxes
+- #9 licencing updated
 
 ---
 
 ## Version 1.0.0 [Major Release]
-**Release Date:** 2015-03-23 [current]
+**Release Date:** 2015-03-23 
 
 ### New Features:
 - #41 Users can now submit issues, questions, requests under the About dropdown, these are logged directly in the GitHub Repo for assessment.
