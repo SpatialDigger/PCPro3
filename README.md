@@ -13,7 +13,7 @@ Your support helps cover development costs and allows me to dedicate more time t
 [![Support Me on Buy Me a Coffee](https://img.shields.io/badge/Support%20Me-Buy%20Me%20a%20Coffee-FF813F?style=for-the-badge&logo=buy-me-a-coffee&logoColor=white)](https://buymeacoffee.com/pointcloud3)
 
 
-Website in development: [PCPro3](https://spatialdigger.github.io/pcpro.github.io/)
+
 
 ## Overview
 PCPro is a high-performance point cloud processing tool designed for efficient 3D data manipulation and analysis. Built using Python 3.12+ and Open3D, it enables users to process, visualize, and analyze large-scale point clouds with ease.
@@ -61,6 +61,8 @@ This project is licensed under a bespoke license, there are commercial and educa
 
 ## Contact
 For questions or suggestions, reach out at garynobles20@gmail.com or open an issue on GitHub.
+
+Website in development: [PCPro3](https://spatialdigger.github.io/pcpro.github.io/)
 
 ---
 # Changelog
