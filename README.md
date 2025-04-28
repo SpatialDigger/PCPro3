@@ -1,9 +1,16 @@
 # PCPro
 
-# ☕️ Support This Project!
+# ☕️ Help Support This Project
 
-If you like this project, consider [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/pointcloud3)
- — it keeps me motivated and caffeinated!  
+I maintain and develop this project alongside my full-time job.  
+It takes a lot of evenings, weekends, and dedication to keep it growing and improving.  
+
+If you find this project valuable, please consider [**supporting my work**](https://buymeacoffee.com/pointcloud3).  
+Your support helps cover development costs and allows me to dedicate more time to making this project even better — thank you for helping keep it alive!
+
+<br>
+
+[![Support Me on Buy Me a Coffee](https://img.shields.io/badge/Support%20Me-Buy%20Me%20a%20Coffee-FF813F?style=for-the-badge&logo=buy-me-a-coffee&logoColor=white)](https://buymeacoffee.com/pointcloud3)
 
 
 Website in development: [PCPro3](https://spatialdigger.github.io/pcpro.github.io/)
