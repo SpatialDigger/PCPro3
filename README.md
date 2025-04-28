@@ -1,5 +1,11 @@
 # PCPro
 
+# ☕️ Support This Project!
+
+If you like this project, consider [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/pointcloud3)
+ — it keeps me motivated and caffeinated!  
+
+
 Website in development: [PCPro3](https://spatialdigger.github.io/pcpro.github.io/)
 
 ## Overview
