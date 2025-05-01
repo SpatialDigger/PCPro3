@@ -72,7 +72,7 @@ Website in development: [PCPro3](https://spatialdigger.github.io/pcpro.github.io
 **Release Date:** [In Developmet]
 
 ### New Features:
-- []
+- #21 #51 Metadata recording, metadata viewer, metadata export 
 - []
 - []
 
