@@ -74,6 +74,7 @@ Website in development: [PCPro3](https://spatialdigger.github.io/pcpro.github.io
 ### New Features:
 - #21 #51 Metadata recording, metadata viewer, metadata export 
 - #21 Automatic metadata updating in the viewer
+- #54 Support added to read .laz files
 - []
 
 ### Bug Fixes:
