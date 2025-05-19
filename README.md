@@ -79,7 +79,7 @@ Website in development: [PCPro3](https://spatialdigger.github.io/pcpro.github.io
 
 ### Bug Fixes:
 - #56 Fixed relative positioning when importing landscape scale pointclouds
-- [Bug fix 2 description]
+- #1 Fixed: Convexhull3D filter assigning filtered pointcloud to the wrong pointcloud
 
 ### Performance Improvements:
 - [Performance improvement 1 description]
@@ -94,7 +94,7 @@ Website in development: [PCPro3](https://spatialdigger.github.io/pcpro.github.io
 
 ### Upgrade Notes:
 - [Upgrade instruction or notes for users]
-- Backwards compatibility with version 1.0.0 licences
+- Backwards compatibility with version 1.1.0 licences
 
 ### Coming Soon:
 - [Feature or update planned for next version]
