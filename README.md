@@ -75,7 +75,7 @@ Website in development: [PCPro3](https://spatialdigger.github.io/pcpro.github.io
 - #21 #51 Metadata recording, metadata viewer, metadata export 
 - #21 Automatic metadata updating in the viewer
 - #54 Support added to read .laz files
-- 
+- #58 Create a licence Admin  app to track multi-licence situations
 
 ### Bug Fixes:
 - #56 Fixed relative positioning when importing landscape scale pointclouds
