@@ -68,18 +68,19 @@ Website in development: [PCPro3](https://spatialdigger.github.io/pcpro.github.io
 # Changelog
 
 ---
-## Version 1.2.0 [Minor Version]
+
+---
+# Changelog
+
+---
+## Version 1.2.1 [Patch]
 **Release Date:** [In Developmet]
 
 ### New Features:
-- #21 #51 Metadata recording, metadata viewer, metadata export 
-- #21 Automatic metadata updating in the viewer
-- #54 Support added to read .laz files
-- #58 Create a licence Admin  app to track multi-licence situations
+- 
 
 ### Bug Fixes:
-- #56 Fixed relative positioning when importing landscape scale pointclouds
-- #1 Fixed: Convexhull3D filter assigning filtered pointcloud to the wrong pointcloud
+- 
 
 ### Performance Improvements:
 - [Performance improvement 1 description]
@@ -94,16 +95,35 @@ Website in development: [PCPro3](https://spatialdigger.github.io/pcpro.github.io
 
 ### Upgrade Notes:
 - [Upgrade instruction or notes for users]
-- Backwards compatibility with version 1.1.0 licences
+
 
 ### Coming Soon:
-- [Feature or update planned for next version]
+- #21 Automatic metadata updating in the viewer
+- Support for polygons and GPKGs
 
 ### Deprecation Notices:
 - [Deprecated feature or upcoming removal notice]
 
+
 ### Special Thanks:
 - 
+
+---
+
+## Version 1.2.0 [Minor Version]
+**Release Date:** 2025-06-01
+
+### New Features:
+- #21 #51 Metadata recording, metadata viewer, metadata export 
+- #54 Support added to read .laz files
+- #58 Create a licence Admin  app to track multi-licence situations
+
+### Bug Fixes:
+- #56 Fixed relative positioning when importing landscape scale pointclouds
+- #1 Fixed: Convexhull3D filter assigning filtered pointcloud to the wrong pointcloud
+
+### Upgrade Notes:
+- Backwards compatibility with version 1.1.0 licences
 
 ---
 ## Version 1.1.0 [Minor Version]
