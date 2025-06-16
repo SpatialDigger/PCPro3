@@ -68,11 +68,6 @@ Website in development: [PCPro3](https://spatialdigger.github.io/pcpro.github.io
 # Changelog
 
 ---
-
----
-# Changelog
-
----
 ## Version 1.2.1 [Patch]
 **Release Date:** [In Developmet]
 
@@ -111,7 +106,7 @@ Website in development: [PCPro3](https://spatialdigger.github.io/pcpro.github.io
 ---
 
 ## Version 1.2.0 [Minor Version]
-**Release Date:** 2025-06-01
+**Release Date:** 2025-06-16
 
 ### New Features:
 - #21 #51 Metadata recording, metadata viewer, metadata export 
